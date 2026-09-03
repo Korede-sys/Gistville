@@ -48,12 +48,15 @@ export default function Landing() {
             <Link to="/app" className="text-sm font-semibold text-[#5A5A6E]">
               Browse app
             </Link>
-            <a
-              href="#waitlist"
-              className="bg-ink text-paper px-4 py-2 rounded text-sm font-semibold"
+            <Link to="/login" className="text-sm font-semibold text-[#5A5A6E]">
+              Log in
+            </Link>
+            <Link
+              to="/signup"
+              className="bg-indigo text-white px-4 py-2 rounded text-sm font-semibold"
             >
-              Join waitlist
-            </a>
+              Sign up
+            </Link>
           </div>
         </div>
       </nav>
