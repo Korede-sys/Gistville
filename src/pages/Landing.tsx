@@ -45,15 +45,15 @@ export default function Landing() {
             Gist<span className="text-indigo">Ville</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/app" className="text-sm font-semibold text-[#5A5A6E]">
+            <Link to="/app" className="text-sm font-semibold text-ink/60">
               Browse app
             </Link>
-            <Link to="/login" className="text-sm font-semibold text-[#5A5A6E]">
+            <Link to="/login" className="text-sm font-semibold text-ink/60">
               Log in
             </Link>
             <Link
               to="/signup"
-              className="bg-indigo text-white px-4 py-2 rounded text-sm font-semibold"
+              className="tag-label bg-indigo text-white px-4 py-2 rounded-sm text-xs"
             >
               Sign up
             </Link>
@@ -66,16 +66,16 @@ export default function Landing() {
           {["Tailors", "Makeup artists", "Aso-ebi & gele", "Wig vendors", "Abuja"].map((t) => (
             <span
               key={t}
-              className="font-mono text-[11px] uppercase tracking-wide px-3 py-1 border border-stone rounded-full text-stone"
+              className="tag-label text-[11px] px-3 py-1 border border-ink rounded-sm text-ink"
             >
               {t}
             </span>
           ))}
         </div>
-        <h1 className="font-display font-semibold text-[clamp(2.2rem,6vw,4rem)] leading-[1.05] max-w-3xl">
-          Every vendor here <span className="text-indigo italic font-medium">sabi</span> their craft.
+        <h1 className="font-display text-[clamp(2.4rem,7vw,4.6rem)] leading-[0.98] max-w-3xl uppercase">
+          Every vendor here <span className="text-indigo">sabi</span> their craft.
         </h1>
-        <p className="mt-5 text-lg text-[#4A4A5E] max-w-xl">
+        <p className="mt-5 text-lg text-ink/80 max-w-xl">
           The directory, chat and payment app for Abuja's fashion &amp; beauty vendors — where buyers
           know exactly who to trust, and vendors get paid without wahala.
         </p>
@@ -83,14 +83,14 @@ export default function Landing() {
           <a
             href="#waitlist"
             onClick={() => setRole("vendor")}
-            className="bg-indigo hover:bg-indigo-deep transition text-white px-7 py-3.5 rounded font-semibold"
+            className="tag-label bg-indigo hover:bg-indigo-deep transition text-white text-sm px-7 py-3.5 rounded-sm"
           >
             I'm a vendor — join free
           </a>
           <a
             href="#waitlist"
             onClick={() => setRole("buyer")}
-            className="border-[1.5px] border-ink hover:bg-ink hover:text-paper transition px-7 py-3.5 rounded font-semibold"
+            className="tag-label border-[1.5px] border-ink hover:bg-ink hover:text-paper transition text-sm px-7 py-3.5 rounded-sm"
           >
             I want to shop
           </a>
@@ -122,10 +122,10 @@ export default function Landing() {
               body: "Payouts land in your account within 24 hours via Paystack. No chasing, no delay.",
             },
           ].map((s) => (
-            <div key={s.n} className="bg-white border border-stone-light rounded p-7">
-              <div className="font-mono text-xs text-mustard font-bold">{s.n}</div>
-              <h3 className="text-xl font-semibold mt-3 mb-2.5">{s.title}</h3>
-              <p className="text-sm text-[#5A5A6E]">{s.body}</p>
+            <div key={s.n} className="bg-white border border-stone-light rounded-sm p-7 hover:border-ink transition">
+              <div className="font-display text-2xl text-indigo">{s.n}</div>
+              <h3 className="text-xl font-bold mt-3 mb-2.5">{s.title}</h3>
+              <p className="text-sm text-ink/60">{s.body}</p>
             </div>
           ))}
         </div>
@@ -139,19 +139,19 @@ export default function Landing() {
           <h2 className="font-display font-semibold text-[clamp(1.8rem,4vw,2.6rem)] text-white">
             Free to start. Pay when you're earning.
           </h2>
-          <div className="grid md:grid-cols-3 gap-px bg-white/10 border border-white/10 rounded overflow-hidden mt-8">
+          <div className="grid md:grid-cols-3 gap-px bg-white/10 border border-white/10 rounded-sm overflow-hidden mt-8">
             {[
               { amount: "Free", unit: "", title: "Basic stall", body: "List your work, chat with buyers, appear in category search. No monthly fee." },
-              { amount: "₦1,000", unit: "/month", title: "Verified badge", body: "Blue check, priority placement in your category, and buyer trust that converts to sales." },
+              { amount: "₦1,000", unit: "/month", title: "Verified badge", body: "Red check, priority placement in your category, and buyer trust that converts to sales." },
               { amount: "5%", unit: " per sale", title: "In-app payment", body: "Only charged when you actually get paid through GistVille. Cash deals stay free." },
             ].map((p) => (
               <div key={p.title} className="bg-ink p-8">
-                <div className="font-display font-semibold text-4xl text-mustard">
+                <div className="font-display text-4xl text-mustard">
                   {p.amount}
-                  <small className="font-sans text-base text-[#B8B8C8] font-normal">{p.unit}</small>
+                  <small className="font-sans text-base text-white/60 font-normal">{p.unit}</small>
                 </div>
-                <h4 className="text-base mt-3.5 mb-2">{p.title}</h4>
-                <p className="text-sm text-[#A8A8BC]">{p.body}</p>
+                <h4 className="text-base font-bold mt-3.5 mb-2">{p.title}</h4>
+                <p className="text-sm text-white/70">{p.body}</p>
               </div>
             ))}
           </div>
@@ -168,14 +168,14 @@ export default function Landing() {
           </h2>
         </div>
 
-        <div className="bg-white border border-stone-light rounded-lg p-10 max-w-xl mx-auto">
+        <div className="bg-white border border-stone-light rounded-sm p-10 max-w-xl mx-auto">
           {!submitted ? (
             <form onSubmit={handleSubmit}>
               <div className="flex gap-2.5 mb-6">
                 <button
                   type="button"
                   onClick={() => setRole("vendor")}
-                  className={`flex-1 py-3.5 border-[1.5px] rounded font-semibold text-sm transition ${
+                  className={`flex-1 py-3.5 border-[1.5px] rounded-sm tag-label text-xs transition ${
                     role === "vendor"
                       ? "border-indigo bg-indigo text-white"
                       : "border-stone-light bg-paper text-ink"
@@ -186,7 +186,7 @@ export default function Landing() {
                 <button
                   type="button"
                   onClick={() => setRole("buyer")}
-                  className={`flex-1 py-3.5 border-[1.5px] rounded font-semibold text-sm transition ${
+                  className={`flex-1 py-3.5 border-[1.5px] rounded-sm tag-label text-xs transition ${
                     role === "buyer"
                       ? "border-indigo bg-indigo text-white"
                       : "border-stone-light bg-paper text-ink"
@@ -197,7 +197,7 @@ export default function Landing() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">
+                <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">
                   Full name
                 </label>
                 <input
@@ -205,12 +205,12 @@ export default function Landing() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Amaka Chukwu"
-                  className="w-full px-3.5 py-3 border-[1.5px] border-stone-light rounded bg-paper text-sm outline-none focus:border-indigo"
+                  className="w-full px-3.5 py-3 border-[1.5px] border-stone-light rounded-sm bg-paper text-sm outline-none focus:border-indigo"
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">
+                <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">
                   WhatsApp number
                 </label>
                 <input
@@ -219,19 +219,19 @@ export default function Landing() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="080X XXX XXXX"
-                  className="w-full px-3.5 py-3 border-[1.5px] border-stone-light rounded bg-paper text-sm outline-none focus:border-indigo"
+                  className="w-full px-3.5 py-3 border-[1.5px] border-stone-light rounded-sm bg-paper text-sm outline-none focus:border-indigo"
                 />
               </div>
 
               {role === "vendor" && (
                 <div className="mb-4">
-                  <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">
+                  <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">
                     What do you sell?
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3.5 py-3 border-[1.5px] border-stone-light rounded bg-paper text-sm outline-none focus:border-indigo"
+                    className="w-full px-3.5 py-3 border-[1.5px] border-stone-light rounded-sm bg-paper text-sm outline-none focus:border-indigo"
                   >
                     {categories.map((c) => (
                       <option key={c}>{c}</option>
@@ -241,7 +241,7 @@ export default function Landing() {
               )}
 
               <div className="mb-4">
-                <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">
+                <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">
                   Area in Abuja
                 </label>
                 <input
@@ -249,7 +249,7 @@ export default function Landing() {
                   value={area}
                   onChange={(e) => setArea(e.target.value)}
                   placeholder="e.g. Wuse 2, Garki, Lugbe"
-                  className="w-full px-3.5 py-3 border-[1.5px] border-stone-light rounded bg-paper text-sm outline-none focus:border-indigo"
+                  className="w-full px-3.5 py-3 border-[1.5px] border-stone-light rounded-sm bg-paper text-sm outline-none focus:border-indigo"
                 />
               </div>
 
@@ -258,7 +258,7 @@ export default function Landing() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-indigo hover:bg-indigo-deep disabled:opacity-60 transition text-white font-semibold py-3.5 rounded"
+                className="w-full bg-indigo hover:bg-indigo-deep disabled:opacity-60 transition text-white tag-label text-sm py-3.5 rounded-sm"
               >
                 {submitting ? "Joining..." : "Join the waitlist"}
               </button>
@@ -270,7 +270,7 @@ export default function Landing() {
             <div className="text-center py-5">
               <CheckCircle2 size={36} className="text-green mx-auto" />
               <h3 className="text-lg font-semibold mt-3">You're on the list</h3>
-              <p className="text-sm text-[#5A5A6E] mt-1.5">
+              <p className="text-sm text-ink/60 mt-1.5">
                 We'll reach out on WhatsApp within a few days with next steps.
               </p>
             </div>

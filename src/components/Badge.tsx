@@ -1,8 +1,8 @@
 const tones = {
-  indigo: "bg-indigo/10 text-indigo",
-  mustard: "bg-mustard/15 text-[#96760F]",
-  green: "bg-green/10 text-green",
-  stone: "bg-stone/10 text-[#5A5A6E]",
+  indigo: "bg-indigo text-white",
+  mustard: "bg-mustard text-ink",
+  green: "bg-green text-white",
+  stone: "bg-ink/5 text-ink/70",
 } as const;
 
 export default function Badge({
@@ -13,7 +13,9 @@ export default function Badge({
   tone?: keyof typeof tones;
 }) {
   return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${tones[tone]}`}>
+    <span
+      className={`tag-label text-[10px] px-2 py-0.5 rounded-sm ${tones[tone]}`}
+    >
       {children}
     </span>
   );

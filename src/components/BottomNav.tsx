@@ -21,7 +21,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="flex items-center justify-around py-2.5 border-t border-stone-light bg-white shrink-0">
+    <div className="flex items-center justify-around py-2.5 border-t-2 border-ink bg-white shrink-0">
       {allTabs.map((t) => {
         const Icon = t.icon;
         const active = location.pathname === t.to;
@@ -33,8 +33,8 @@ export default function BottomNav() {
               active ? "text-indigo" : "text-stone"
             }`}
           >
-            <Icon size={19} />
-            <span className={`text-[9px] ${active ? "font-semibold" : ""}`}>
+            <Icon size={19} strokeWidth={active ? 2.5 : 2} />
+            <span className={`tag-label text-[9px] ${active ? "text-indigo" : ""}`}>
               {t.label}
             </span>
           </Link>

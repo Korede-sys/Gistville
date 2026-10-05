@@ -29,7 +29,7 @@ export default function BuyerOrders() {
       {loading && <p className="text-sm text-stone text-center py-10">Loading...</p>}
 
       {!loading && orders.length === 0 && (
-        <div className="bg-white border border-dashed border-stone-light rounded-lg p-8 text-center">
+        <div className="bg-white border border-dashed border-stone-light rounded-sm p-8 text-center">
           <p className="text-sm text-stone">
             No orders yet. Orders you pay for through chat will show up here.
           </p>
@@ -38,7 +38,7 @@ export default function BuyerOrders() {
 
       <div className="space-y-3">
         {orders.map((o) => (
-          <div key={o.id} className="bg-white border border-stone-light rounded-lg p-3.5">
+          <div key={o.id} className="bg-white border border-stone-light rounded-sm p-3.5">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-ink">{o.description}</p>
               <p className="text-sm font-display font-semibold text-ink">

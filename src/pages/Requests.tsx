@@ -37,11 +37,11 @@ export default function Requests() {
 
         {!loading &&
           requests.map((r) => (
-            <div key={r.id} className="bg-white border border-stone-light rounded-xl p-3.5">
+            <div key={r.id} className="bg-white border border-stone-light rounded-sm p-3.5">
               <p className="text-sm text-ink leading-snug">{r.text}</p>
               <div className="flex items-center justify-between mt-2.5">
                 <div className="flex items-center gap-2 text-[11px] text-stone">
-                  <span className="font-medium text-[#5A5A6E]">{r.poster_name}</span>
+                  <span className="font-medium text-ink/60">{r.poster_name}</span>
                   <span className="flex items-center gap-0.5">
                     <MapPin size={10} /> {r.area}
                   </span>
@@ -58,7 +58,7 @@ export default function Requests() {
       <div className="p-4 border-t border-stone-light bg-white">
         <Link
           to="/app/requests/new"
-          className="w-full bg-indigo text-white text-sm font-semibold py-3 rounded-lg flex items-center justify-center gap-2"
+          className="w-full bg-indigo text-white text-sm font-semibold py-3 rounded-sm flex items-center justify-center gap-2"
         >
           <Radio size={15} /> Post a request
         </Link>

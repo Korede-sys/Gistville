@@ -33,20 +33,20 @@ export default function PostRequest() {
       </div>
 
       <div className="flex-1 px-4 py-4">
-        <label className="text-xs font-semibold text-[#5A5A6E] block mb-1.5">What do you need?</label>
+        <label className="text-xs font-semibold text-ink/60 block mb-1.5">What do you need?</label>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="e.g. Need a gele stylist for Saturday, Wuse area, budget ₦10k"
-          className="w-full h-28 bg-white border border-stone-light rounded-lg p-3 text-sm text-ink resize-none outline-none"
+          className="w-full h-28 bg-white border border-stone-light rounded-sm p-3 text-sm text-ink resize-none outline-none"
         />
 
-        <label className="text-xs font-semibold text-[#5A5A6E] block mb-1.5 mt-4">Area</label>
+        <label className="text-xs font-semibold text-ink/60 block mb-1.5 mt-4">Area</label>
         <input
           value={area}
           onChange={(e) => setArea(e.target.value)}
           placeholder="e.g. Wuse, Garki, Lugbe"
-          className="w-full bg-white border border-stone-light rounded-lg p-3 text-sm text-ink outline-none"
+          className="w-full bg-white border border-stone-light rounded-sm p-3 text-sm text-ink outline-none"
         />
 
         <p className="text-[11px] text-stone mt-2">
@@ -60,7 +60,7 @@ export default function PostRequest() {
         <button
           disabled={!text.trim() || !area.trim() || submitting}
           onClick={submit}
-          className="w-full bg-indigo disabled:bg-stone/40 text-white text-sm font-semibold py-3 rounded-lg"
+          className="w-full bg-indigo disabled:bg-stone/40 text-white text-sm font-semibold py-3 rounded-sm"
         >
           {submitting ? "Posting..." : "Post to nearby vendors"}
         </button>

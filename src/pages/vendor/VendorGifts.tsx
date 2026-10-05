@@ -37,11 +37,11 @@ function PayoutSetup({ onSaved }: { onSaved: (accountName: string) => void }) {
   };
 
   return (
-    <div className="bg-white border border-stone-light rounded-lg p-5">
+    <div className="bg-white border border-stone-light rounded-sm p-5">
       <p className="text-sm font-semibold text-ink mb-3 flex items-center gap-1.5">
         <Landmark size={15} /> Add a payout account
       </p>
-      <label className="text-xs font-semibold text-[#4A4A5E] block mb-1.5">Bank</label>
+      <label className="text-xs font-semibold text-ink/80 block mb-1.5">Bank</label>
       <select
         value={bankCode}
         onChange={(e) => setBankCode(e.target.value)}
@@ -55,7 +55,7 @@ function PayoutSetup({ onSaved }: { onSaved: (accountName: string) => void }) {
         ))}
       </select>
 
-      <label className="text-xs font-semibold text-[#4A4A5E] block mb-1.5">Account number</label>
+      <label className="text-xs font-semibold text-ink/80 block mb-1.5">Account number</label>
       <input
         value={accountNumber}
         onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
@@ -69,7 +69,7 @@ function PayoutSetup({ onSaved }: { onSaved: (accountName: string) => void }) {
       <button
         disabled={!bankCode || accountNumber.length !== 10 || submitting}
         onClick={submit}
-        className="w-full bg-indigo disabled:bg-stone/40 text-white text-sm font-semibold py-2.5 rounded-lg"
+        className="w-full bg-indigo disabled:bg-stone/40 text-white text-sm font-semibold py-2.5 rounded-sm"
       >
         {submitting ? "Verifying account..." : "Verify & save"}
       </button>
@@ -102,11 +102,11 @@ function StripePayoutSection({ connected }: { connected: boolean }) {
       </p>
 
       {connected ? (
-        <div className="bg-green/10 border border-green/20 rounded-lg p-5 flex items-start gap-3">
+        <div className="bg-green/10 border border-green/20 rounded-sm p-5 flex items-start gap-3">
           <CheckCircle2 size={20} className="text-green shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-ink">Stripe account connected</p>
-            <p className="text-xs text-[#5A5A6E] mt-1">
+            <p className="text-xs text-ink/60 mt-1">
               Every order you get paid for splits automatically — GistVille's fee stays with the
               platform, the rest transfers to you at the moment of sale.
             </p>
@@ -116,9 +116,9 @@ function StripePayoutSection({ connected }: { connected: boolean }) {
           </div>
         </div>
       ) : (
-        <div className="bg-white border border-stone-light rounded-lg p-5">
+        <div className="bg-white border border-stone-light rounded-sm p-5">
           <p className="text-sm font-semibold text-ink mb-2">Connect your Stripe account</p>
-          <p className="text-xs text-[#5A5A6E] mb-4">
+          <p className="text-xs text-ink/60 mb-4">
             Required before you can receive payment for orders. Takes a few minutes — Stripe will
             ask for your bank details and identity verification directly.
           </p>
@@ -126,7 +126,7 @@ function StripePayoutSection({ connected }: { connected: boolean }) {
           <button
             onClick={connect}
             disabled={connecting}
-            className="w-full bg-indigo disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-lg"
+            className="w-full bg-indigo disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-sm"
           >
             {connecting ? "Redirecting..." : "Connect with Stripe"}
           </button>
@@ -207,7 +207,7 @@ export default function VendorGifts() {
       <h1 className="text-2xl font-display font-semibold text-ink mb-1">Earnings</h1>
       <p className="text-sm text-stone mb-5">Order sales and gifts from buyers.</p>
 
-      <div className="bg-white border border-stone-light rounded-lg p-5 mb-4">
+      <div className="bg-white border border-stone-light rounded-sm p-5 mb-4">
         <div className="flex justify-between">
           <div>
             <p className="text-xs font-semibold text-stone uppercase tracking-wide font-mono">
@@ -226,21 +226,21 @@ export default function VendorGifts() {
             </p>
           </div>
         </div>
-        <div className="flex justify-between mt-3 pt-3 border-t border-stone-light text-xs text-[#5A5A6E]">
+        <div className="flex justify-between mt-3 pt-3 border-t border-stone-light text-xs text-ink/60">
           <span>Orders: ₦{orderEarnings.toLocaleString()} (95%)</span>
           <span>Gifts: ₦{giftTotal.toLocaleString()} (70%)</span>
         </div>
       </div>
 
       {payoutAccountName ? (
-        <div className="bg-white border border-stone-light rounded-lg p-5 mb-6">
+        <div className="bg-white border border-stone-light rounded-sm p-5 mb-6">
           <p className="text-sm font-semibold text-ink flex items-center gap-1.5 mb-3">
             <CheckCircle2 size={15} className="text-green" /> Payout account: {payoutAccountName}
           </p>
           <button
             onClick={handleWithdraw}
             disabled={withdrawing || availableBalance < 100}
-            className="w-full bg-green disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-lg"
+            className="w-full bg-green disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-sm"
           >
             {withdrawing
               ? "Processing..."
@@ -263,7 +263,7 @@ export default function VendorGifts() {
       </p>
 
       {!loading && transactions.length === 0 && (
-        <div className="bg-white border border-dashed border-stone-light rounded-lg p-10 text-center">
+        <div className="bg-white border border-dashed border-stone-light rounded-sm p-10 text-center">
           <GiftIcon size={20} className="text-stone mx-auto mb-2" />
           <p className="text-sm text-stone">
             No gifts yet. Buyers can send gifts from your public profile page. (Order sales are in
@@ -276,7 +276,7 @@ export default function VendorGifts() {
         {transactions.map((t) => (
           <div
             key={t.id}
-            className="bg-white border border-stone-light rounded-lg p-3.5 flex items-center justify-between"
+            className="bg-white border border-stone-light rounded-sm p-3.5 flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
               <span className="text-2xl">{t.gift_catalog?.emoji ?? "🎁"}</span>

@@ -31,7 +31,7 @@ export default function Coins() {
         <ArrowLeft size={16} /> Back
       </button>
 
-      <div className="bg-gradient-to-br from-indigo to-indigo-deep rounded-xl p-5 text-white mb-6">
+      <div className="bg-gradient-to-br from-indigo to-indigo-deep rounded-sm p-5 text-white mb-6">
         <p className="text-xs opacity-80 uppercase tracking-wide font-mono">Your balance</p>
         <div className="flex items-center gap-2 mt-1">
           <CoinsIcon size={26} className="fill-mustard text-mustard" />
@@ -41,7 +41,7 @@ export default function Coins() {
       </div>
 
       {!isSupabaseConfigured && (
-        <p className="text-xs text-stone bg-white border border-stone-light rounded-lg p-3 mb-4">
+        <p className="text-xs text-stone bg-white border border-stone-light rounded-sm p-3 mb-4">
           Connect Supabase + Paystack to buy real coins — see README.
         </p>
       )}
@@ -55,13 +55,13 @@ export default function Coins() {
             key={pkg.coins}
             onClick={() => handleBuy(pkg)}
             disabled={buying !== null}
-            className="w-full bg-white border border-stone-light rounded-lg p-4 flex items-center justify-between disabled:opacity-60"
+            className="w-full bg-white border border-stone-light rounded-sm p-4 flex items-center justify-between disabled:opacity-60"
           >
             <div className="flex items-center gap-2">
               <CoinsIcon size={18} className="fill-mustard text-mustard" />
               <span className="text-sm font-semibold text-ink">{pkg.coins.toLocaleString()} coins</span>
               {pkg.bonus && (
-                <span className="flex items-center gap-0.5 text-[10px] font-semibold text-green bg-green/10 px-1.5 py-0.5 rounded-full">
+                <span className="flex items-center gap-0.5 tag-label text-[10px] text-green bg-green/10 px-1.5 py-0.5 rounded-sm">
                   <Sparkles size={9} /> Bonus
                 </span>
               )}

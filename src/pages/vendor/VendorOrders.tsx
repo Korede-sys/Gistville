@@ -12,10 +12,10 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 const STATUS_TONE: Record<OrderStatus, string> = {
-  pending: "bg-mustard/15 text-[#96760F]",
+  pending: "bg-mustard/15 text-mustard",
   in_progress: "bg-indigo/10 text-indigo",
   ready: "bg-green/10 text-green",
-  completed: "bg-stone/10 text-[#5A5A6E]",
+  completed: "bg-stone/10 text-ink/60",
 };
 
 export default function VendorOrders() {
@@ -52,7 +52,7 @@ export default function VendorOrders() {
       {loading && <p className="text-sm text-stone">Loading...</p>}
 
       {!loading && orders.length === 0 && (
-        <div className="bg-white border border-dashed border-stone-light rounded-lg p-10 text-center">
+        <div className="bg-white border border-dashed border-stone-light rounded-sm p-10 text-center">
           <p className="text-sm text-stone">No orders yet. They'll show up here once buyers pay.</p>
         </div>
       )}
@@ -61,7 +61,7 @@ export default function VendorOrders() {
         {orders.map((o) => {
           const isLast = ORDER_STEPS.indexOf(o.status) === ORDER_STEPS.length - 1;
           return (
-            <div key={o.id} className="bg-white border border-stone-light rounded-lg p-4">
+            <div key={o.id} className="bg-white border border-stone-light rounded-sm p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-ink">{o.description}</p>
@@ -71,7 +71,7 @@ export default function VendorOrders() {
                   <p className="text-sm font-display font-semibold text-ink">
                     ₦{o.amount.toLocaleString()}
                   </p>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_TONE[o.status]}`}>
+                  <span className={`tag-label text-[10px] px-2 py-0.5 rounded-sm ${STATUS_TONE[o.status]}`}>
                     {STATUS_LABEL[o.status]}
                   </span>
                 </div>
@@ -80,7 +80,7 @@ export default function VendorOrders() {
                 <button
                   onClick={() => advance(o)}
                   disabled={updatingId === o.id}
-                  className="w-full mt-3 border border-stone-light text-[#5A5A6E] text-xs font-semibold py-2 rounded-lg disabled:opacity-60"
+                  className="w-full mt-3 border border-stone-light text-ink/60 text-xs font-semibold py-2 rounded-sm disabled:opacity-60"
                 >
                   {updatingId === o.id
                     ? "Updating..."

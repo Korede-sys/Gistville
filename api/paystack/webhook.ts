@@ -93,12 +93,19 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     case "subscription.disable": {
+      // Grace period: don't revoke the verified badge immediately. Only
+      // mark the subscription inactive here — `profiles.verified` stays
+      // true and `verified_until` (set on the last successful charge)
+      // keeps running out on its own, so the badge disappears naturally at
+      // the end of the period the vendor already paid for, not the instant
+      // Paystack reports the cancellation. See src/lib/verification.ts,
+      // which every surface that displays the badge reads through instead
+      // of the raw `verified` column.
       if (vendorProfile) {
         await supabase
           .from("vendor_subscriptions")
           .update({ status: "inactive" })
           .eq("vendor_id", vendorProfile.id);
-        await supabase.from("profiles").update({ verified: false }).eq("id", vendorProfile.id);
       }
       break;
     }

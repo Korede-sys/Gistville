@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from "./supabase";
+import { isEffectivelyVerified } from "./verification";
 import type {
   Vendor,
   VendorRequest,
@@ -117,7 +118,7 @@ function profileRowToVendor(row: Record<string, unknown>): Vendor {
     area: row.area as string,
     rating: Number(row.rating ?? 5),
     reviews: Number(row.reviews ?? 0),
-    verified: Boolean(row.verified),
+    verified: isEffectivelyVerified(row.verified as boolean, row.verified_until as string | null),
     price_from: (row.price_from as string) ?? "",
     gradient: (row.gradient as string) ?? "linear-gradient(135deg, #2B4C7E, #1E3760)",
     availability_status: (row.availability_status as "open" | "busy") ?? "open",
@@ -232,6 +233,18 @@ export async function createVendorRequest(
   return { ok: true };
 }
 
+// Fire-and-forget: notifications are best-effort and must never block or
+// fail the order/dispute action that triggered them.
+function notifyEvent(payload: Record<string, unknown>): void {
+  fetch("/api/notify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(() => {
+    /* best-effort — ignore */
+  });
+}
+
 export async function updateOrderStatus(
   orderId: string,
   status: OrderStatus
@@ -247,6 +260,7 @@ export async function updateOrderStatus(
     .eq("id", orderId);
 
   if (error) return { ok: false, error: error.message };
+  notifyEvent({ event: "order_status_changed", orderId, status });
   return { ok: true };
 }
 
@@ -264,6 +278,7 @@ export async function fileDispute(
     .insert({ order_id: orderId, reason, status: "open" });
 
   if (error) return { ok: false, error: error.message };
+  notifyEvent({ event: "dispute_filed", orderId });
   return { ok: true };
 }
 
@@ -461,6 +476,7 @@ export async function createOrder(input: {
     .single();
 
   if (error || !data) return { ok: false, error: error?.message };
+  notifyEvent({ event: "order_created", orderId: (data as Order).id });
   return { ok: true, order: data as Order };
 }
 
@@ -497,6 +513,70 @@ export async function fetchBuyerOrders(buyerId: string): Promise<Order[]> {
     .order("created_at", { ascending: false });
   if (error || !data) return [];
   return data as Order[];
+}
+
+// ---------------------------------------------------------------------------
+// Saved vendors (buyer bookmarks)
+// ---------------------------------------------------------------------------
+const MOCK_SAVED: Set<string> = new Set();
+
+export async function fetchSavedVendors(buyerId: string): Promise<Vendor[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    return MOCK_VENDORS.filter((v) => MOCK_SAVED.has(v.id));
+  }
+  const { data, error } = await supabase
+    .from("saved_vendors")
+    .select("vendor_id, profiles!saved_vendors_vendor_id_fkey(*, vendor_menu_items(*))")
+    .eq("buyer_id", buyerId)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return (data as unknown as Array<{ profiles: Record<string, unknown> | null }>)
+    .filter((row) => row.profiles)
+    .map((row) => profileRowToVendor(row.profiles as Record<string, unknown>));
+}
+
+export async function isVendorSaved(buyerId: string, vendorId: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return MOCK_SAVED.has(vendorId);
+  const { data } = await supabase
+    .from("saved_vendors")
+    .select("id")
+    .eq("buyer_id", buyerId)
+    .eq("vendor_id", vendorId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+export async function saveVendor(
+  buyerId: string,
+  vendorId: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) {
+    MOCK_SAVED.add(vendorId);
+    return { ok: true };
+  }
+  const { error } = await supabase
+    .from("saved_vendors")
+    .upsert({ buyer_id: buyerId, vendor_id: vendorId }, { onConflict: "buyer_id,vendor_id" });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+export async function unsaveVendor(
+  buyerId: string,
+  vendorId: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) {
+    MOCK_SAVED.delete(vendorId);
+    return { ok: true };
+  }
+  const { error } = await supabase
+    .from("saved_vendors")
+    .delete()
+    .eq("buyer_id", buyerId)
+    .eq("vendor_id", vendorId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 // ---------------------------------------------------------------------------

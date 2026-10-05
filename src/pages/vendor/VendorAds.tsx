@@ -31,7 +31,7 @@ function NewAdModal({
 
   return (
     <div className="fixed inset-0 bg-black/40 z-30 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white rounded-lg p-5">
+      <div className="w-full max-w-md bg-white rounded-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm font-semibold text-ink">Boost a listing</p>
           <button onClick={onClose} aria-label="Close">
@@ -43,7 +43,7 @@ function NewAdModal({
           <p className="text-sm text-stone">Create a listing first before boosting it.</p>
         ) : (
           <>
-            <label className="text-xs font-semibold text-[#4A4A5E] block mb-1.5">Listing</label>
+            <label className="text-xs font-semibold text-ink/80 block mb-1.5">Listing</label>
             <select
               value={listingId}
               onChange={(e) => setListingId(e.target.value)}
@@ -56,7 +56,7 @@ function NewAdModal({
               ))}
             </select>
 
-            <label className="text-xs font-semibold text-[#4A4A5E] block mb-1.5">
+            <label className="text-xs font-semibold text-ink/80 block mb-1.5">
               Budget (₦)
             </label>
             <input
@@ -68,7 +68,7 @@ function NewAdModal({
               className="w-full px-3 py-2.5 border-[1.5px] border-stone-light rounded bg-paper text-sm outline-none focus:border-indigo mb-3"
             />
 
-            <div className="bg-paper border border-stone-light rounded-lg p-3 mb-4 text-xs text-[#5A5A6E] space-y-1">
+            <div className="bg-paper border border-stone-light rounded-sm p-3 mb-4 text-xs text-ink/60 space-y-1">
               <div className="flex justify-between">
                 <span>Goes to reach (buyers who see this)</span>
                 <span className="font-semibold text-ink">₦{reachBudget.toLocaleString()}</span>
@@ -82,7 +82,7 @@ function NewAdModal({
             <button
               disabled={submitting}
               onClick={submit}
-              className="w-full bg-indigo disabled:opacity-60 text-white text-sm font-semibold py-3 rounded-lg"
+              className="w-full bg-indigo disabled:opacity-60 text-white text-sm font-semibold py-3 rounded-sm"
             >
               {submitting ? "Starting campaign..." : "Start boost"}
             </button>
@@ -123,7 +123,7 @@ export default function VendorAds() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-indigo text-white text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center gap-1.5"
+          className="bg-indigo text-white text-sm font-semibold px-4 py-2.5 rounded-sm flex items-center gap-1.5"
         >
           <Megaphone size={15} /> Boost listing
         </button>
@@ -132,16 +132,16 @@ export default function VendorAds() {
       {loading && <p className="text-sm text-stone">Loading...</p>}
 
       {!loading && ads.length === 0 && (
-        <div className="bg-white border border-dashed border-stone-light rounded-lg p-10 text-center">
+        <div className="bg-white border border-dashed border-stone-light rounded-sm p-10 text-center">
           <p className="text-sm text-stone">No active campaigns yet.</p>
         </div>
       )}
 
       <div className="space-y-3">
         {ads.map((a) => (
-          <div key={a.id} className="bg-white border border-stone-light rounded-lg p-4">
+          <div key={a.id} className="bg-white border border-stone-light rounded-sm p-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green/10 text-green capitalize">
+              <span className="tag-label text-[10px] px-2 py-0.5 rounded-sm bg-green/10 text-green">
                 {a.status}
               </span>
               <p className="text-sm font-display font-semibold text-ink">

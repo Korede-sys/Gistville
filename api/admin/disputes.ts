@@ -1,13 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
+import { authenticateAdmin } from "../_lib/authenticateAdmin";
 
 export const config = { runtime: "edge" };
 
 export default async function handler(req: Request): Promise<Response> {
-  const accessCode = process.env.ADMIN_ACCESS_CODE;
-  const supplied = req.headers.get("x-admin-code");
-  if (!accessCode || supplied !== accessCode) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
-  }
+  const admin = await authenticateAdmin(req);
+  if (!admin) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

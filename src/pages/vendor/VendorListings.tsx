@@ -64,7 +64,7 @@ function NewListingModal({ vendorId, onClose, onCreated }: { vendorId: string; o
 
   return (
     <div className="fixed inset-0 bg-black/40 z-30 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white rounded-lg p-5">
+      <div className="w-full max-w-md bg-white rounded-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm font-semibold text-ink">New listing</p>
           <button onClick={onClose} aria-label="Close">
@@ -106,10 +106,10 @@ function NewListingModal({ vendorId, onClose, onCreated }: { vendorId: string; o
           </button>
         </div>
 
-        <label className="text-xs font-semibold text-[#4A4A5E] block mb-1.5">
+        <label className="text-xs font-semibold text-ink/80 block mb-1.5">
           {mediaType === "photo" ? "Photo" : "Video"}
         </label>
-        <label className="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-stone-light rounded-lg py-6 mb-3 cursor-pointer hover:border-indigo transition">
+        <label className="flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-stone-light rounded-sm py-6 mb-3 cursor-pointer hover:border-indigo transition">
           {previewUrl ? (
             mediaType === "photo" ? (
               <img src={previewUrl} alt="Preview" className="max-h-32 rounded" />
@@ -130,14 +130,14 @@ function NewListingModal({ vendorId, onClose, onCreated }: { vendorId: string; o
           />
         </label>
 
-        <label className="text-xs font-semibold text-[#4A4A5E] block mb-1.5">Caption</label>
+        <label className="text-xs font-semibold text-ink/80 block mb-1.5">Caption</label>
         <textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           className="w-full h-20 px-3 py-2.5 border-[1.5px] border-stone-light rounded bg-paper text-sm outline-none focus:border-indigo resize-none mb-3"
         />
 
-        <label className="text-xs font-semibold text-[#4A4A5E] block mb-1.5">Price</label>
+        <label className="text-xs font-semibold text-ink/80 block mb-1.5">Price</label>
         <input
           value={price}
           onChange={(e) => setPrice(e.target.value)}
@@ -150,7 +150,7 @@ function NewListingModal({ vendorId, onClose, onCreated }: { vendorId: string; o
         <button
           disabled={!file || !caption.trim() || !price.trim() || submitting}
           onClick={submit}
-          className="w-full bg-indigo disabled:bg-stone/40 text-white text-sm font-semibold py-3 rounded-lg"
+          className="w-full bg-indigo disabled:bg-stone/40 text-white text-sm font-semibold py-3 rounded-sm"
         >
           {submitting ? "Uploading..." : "Post listing"}
         </button>
@@ -182,7 +182,7 @@ export default function VendorListings() {
         <h1 className="text-2xl font-display font-semibold text-ink">Listings</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-indigo text-white text-sm font-semibold px-4 py-2.5 rounded-lg flex items-center gap-1.5"
+          className="bg-indigo text-white text-sm font-semibold px-4 py-2.5 rounded-sm flex items-center gap-1.5"
         >
           <Plus size={15} /> New listing
         </button>
@@ -191,7 +191,7 @@ export default function VendorListings() {
       {loading && <p className="text-sm text-stone">Loading...</p>}
 
       {!loading && listings.length === 0 && (
-        <div className="bg-white border border-dashed border-stone-light rounded-lg p-10 text-center">
+        <div className="bg-white border border-dashed border-stone-light rounded-sm p-10 text-center">
           <p className="text-sm text-stone">
             No listings yet. Post a photo or video of your work to appear in the buyer feed.
           </p>
@@ -200,7 +200,7 @@ export default function VendorListings() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {listings.map((l) => (
-          <div key={l.id} className="bg-white border border-stone-light rounded-lg overflow-hidden">
+          <div key={l.id} className="bg-white border border-stone-light rounded-sm overflow-hidden">
             <div className="aspect-square bg-stone-light flex items-center justify-center text-stone text-xs">
               {l.media_type === "video" ? "🎥 video" : "🖼 photo"}
             </div>

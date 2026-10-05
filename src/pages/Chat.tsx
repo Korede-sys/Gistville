@@ -51,25 +51,25 @@ function DisputeModal({ orderId, onClose }: { orderId: string; onClose: () => vo
           <>
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-ink flex items-center gap-1.5">
-                <AlertTriangle size={15} className="text-[#96760F]" /> Report an issue
+                <AlertTriangle size={15} className="text-mustard" /> Report an issue
               </p>
               <button onClick={onClose} aria-label="Close">
                 <X size={18} className="text-stone" />
               </button>
             </div>
-            <p className="text-xs text-[#5A5A6E] mb-2">
+            <p className="text-xs text-ink/60 mb-2">
               Payment is held until you confirm delivery. Tell us what's wrong and we'll step in.
             </p>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Order is late / not as described / vendor unresponsive"
-              className="w-full h-20 bg-paper border border-stone-light rounded-lg p-2.5 text-sm resize-none outline-none"
+              className="w-full h-20 bg-paper border border-stone-light rounded-sm p-2.5 text-sm resize-none outline-none"
             />
             <button
               disabled={!reason.trim() || submitting}
               onClick={submit}
-              className="w-full mt-3 bg-ink disabled:bg-stone/40 text-white text-sm font-semibold py-2.5 rounded-lg"
+              className="w-full mt-3 bg-ink disabled:bg-stone/40 text-white text-sm font-semibold py-2.5 rounded-sm"
             >
               {submitting ? "Submitting..." : "Submit report"}
             </button>
@@ -78,7 +78,7 @@ function DisputeModal({ orderId, onClose }: { orderId: string; onClose: () => vo
           <div className="text-center py-3">
             <CheckCircle2 size={28} className="text-green mx-auto" />
             <p className="text-sm font-semibold text-ink mt-2">Report sent</p>
-            <p className="text-xs text-[#5A5A6E] mt-1">
+            <p className="text-xs text-ink/60 mt-1">
               GistVille support will review within 24 hours. Your payment stays protected until this
               is resolved.
             </p>
@@ -226,7 +226,7 @@ export default function Chat() {
         {paid && (
           <button
             onClick={() => setShowDispute(true)}
-            className="text-[10px] font-semibold text-[#96760F] flex items-center gap-1"
+            className="text-[10px] font-semibold text-mustard flex items-center gap-1"
           >
             <AlertTriangle size={12} /> Report
           </button>
@@ -248,7 +248,7 @@ export default function Chat() {
           </div>
         ))}
 
-        <div className="bg-white border border-stone-light rounded-xl p-3.5 mt-3">
+        <div className="bg-white border border-stone-light rounded-sm p-3.5 mt-3">
           <p className="text-[10px] font-mono uppercase tracking-wide text-stone">Payment request</p>
           <div className="flex items-center justify-between mt-1.5">
             <span className="text-sm font-medium text-ink">{ORDER_DESCRIPTION}</span>
@@ -261,7 +261,7 @@ export default function Chat() {
               <button
                 onClick={handlePay}
                 disabled={paying}
-                className="w-full mt-3 bg-green disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-lg flex items-center justify-center gap-1.5"
+                className="w-full mt-3 bg-green disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-sm flex items-center justify-center gap-1.5"
               >
                 {!profile || profile.role !== "buyer" ? (
                   <>
@@ -285,14 +285,14 @@ export default function Chat() {
               {payError && <p className="text-xs text-red-600 mt-2">{payError}</p>}
             </>
           ) : (
-            <div className="w-full mt-3 bg-green/10 text-green text-sm font-semibold py-2.5 rounded-lg text-center flex items-center justify-center gap-1.5">
+            <div className="w-full mt-3 bg-green/10 text-green text-sm font-semibold py-2.5 rounded-sm text-center flex items-center justify-center gap-1.5">
               <ShieldCheck size={14} /> Paid — held until delivery confirmed
             </div>
           )}
         </div>
 
         {paid && (
-          <div className="bg-white border border-stone-light rounded-xl p-3.5">
+          <div className="bg-white border border-stone-light rounded-sm p-3.5">
             <p className="text-[10px] font-mono uppercase tracking-wide text-stone mb-3">Order status</p>
             <div className="space-y-3">
               {ORDER_STEPS.map((step, i) => (
@@ -316,7 +316,7 @@ export default function Chat() {
               <button
                 onClick={refreshStatus}
                 disabled={refreshing}
-                className="w-full mt-3.5 border border-stone-light text-[#5A5A6E] text-xs font-semibold py-2 rounded-lg disabled:opacity-60"
+                className="w-full mt-3.5 border border-stone-light text-ink/60 text-xs font-semibold py-2 rounded-sm disabled:opacity-60"
               >
                 {refreshing ? "Checking..." : "Refresh status"}
               </button>

@@ -28,7 +28,7 @@ export default function GameLobby() {
         <Link to="/buyer/games" className="inline-flex items-center gap-1.5 text-sm text-stone mb-4">
           <ArrowLeft size={16} /> Games
         </Link>
-        <div className="bg-white border border-stone-light rounded-lg p-5 text-center">
+        <div className="bg-white border border-stone-light rounded-sm p-5 text-center">
           <p className="text-sm text-ink font-semibold mb-1.5">Multiplayer needs the backend connected</p>
           <p className="text-xs text-stone">
             One Letter uses Supabase Realtime to sync two players live. Set VITE_SUPABASE_URL /
@@ -50,7 +50,7 @@ export default function GameLobby() {
         Change one letter to make a new word. Timer shrinks each round. First to fail loses.
       </p>
 
-      <label className="text-xs font-semibold text-[#4A4A5E] block mb-1.5">Your name</label>
+      <label className="text-xs font-semibold text-ink/80 block mb-1.5">Your name</label>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -62,20 +62,20 @@ export default function GameLobby() {
         <div className="space-y-3">
           <button
             onClick={createRoom}
-            className="w-full bg-indigo text-white text-sm font-semibold py-3.5 rounded-lg flex items-center justify-center gap-2"
+            className="w-full bg-indigo text-white text-sm font-semibold py-3.5 rounded-sm flex items-center justify-center gap-2"
           >
             <Plus size={16} /> Create a room
           </button>
           <button
             onClick={() => setMode("join")}
-            className="w-full border-[1.5px] border-stone-light text-ink text-sm font-semibold py-3.5 rounded-lg flex items-center justify-center gap-2"
+            className="w-full border-[1.5px] border-stone-light text-ink text-sm font-semibold py-3.5 rounded-sm flex items-center justify-center gap-2"
           >
             <LogIn size={16} /> Join with a code
           </button>
         </div>
       ) : (
         <div>
-          <label className="text-xs font-semibold text-[#4A4A5E] block mb-1.5">Room code</label>
+          <label className="text-xs font-semibold text-ink/80 block mb-1.5">Room code</label>
           <input
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
@@ -86,7 +86,7 @@ export default function GameLobby() {
           <button
             onClick={joinRoom}
             disabled={!joinCode.trim()}
-            className="w-full bg-indigo disabled:bg-stone/40 text-white text-sm font-semibold py-3.5 rounded-lg"
+            className="w-full bg-indigo disabled:bg-stone/40 text-white text-sm font-semibold py-3.5 rounded-sm"
           >
             Join room
           </button>

@@ -52,14 +52,14 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen bg-paper flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md bg-white border border-stone-light rounded-lg p-8">
+      <div className="w-full max-w-md bg-white border border-stone-light rounded-sm p-8">
         <div className="font-display font-bold text-xl mb-1">
           Gist<span className="text-indigo">Ville</span>
         </div>
         <h1 className="text-lg font-semibold text-ink mb-5">Create your account</h1>
 
         {redirect ? (
-          <p className="text-xs text-stone bg-paper border border-stone-light rounded-lg px-3 py-2.5 mb-6">
+          <p className="text-xs text-stone bg-paper border border-stone-light rounded-sm px-3 py-2.5 mb-6">
             Creating a buyer account so you can complete your order.
           </p>
         ) : (
@@ -87,7 +87,7 @@ export default function SignUp() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">Full name</label>
+            <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">Full name</label>
             <input
               required
               value={name}
@@ -99,7 +99,7 @@ export default function SignUp() {
           {role === "vendor" && (
             <>
               <div>
-                <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">
+                <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">
                   Business name
                 </label>
                 <input
@@ -111,7 +111,7 @@ export default function SignUp() {
                 />
               </div>
               <div>
-                <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">
+                <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">
                   Category
                 </label>
                 <select
@@ -125,7 +125,7 @@ export default function SignUp() {
                 </select>
               </div>
               <div>
-                <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">
+                <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">
                   Country
                 </label>
                 <select
@@ -147,7 +147,7 @@ export default function SignUp() {
           )}
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">
+            <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">
               City / Area
             </label>
             <input
@@ -160,7 +160,7 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">Email</label>
+            <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">Email</label>
             <input
               required
               type="email"
@@ -171,7 +171,7 @@ export default function SignUp() {
           </div>
 
           <div>
-            <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">Password</label>
+            <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">Password</label>
             <input
               required
               type="password"

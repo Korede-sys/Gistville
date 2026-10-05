@@ -175,6 +175,33 @@ create table app_settings (
   value text not null
 );
 
+-- Real per-admin auth (replaces the shared ADMIN_ACCESS_CODE as the ongoing
+-- access control). A normal Supabase-authenticated user becomes an admin by
+-- being added here; RLS has no policies on this table at all, so it is only
+-- ever readable/writable via the service-role key from api/admin/*.ts — not
+-- from the client, and not even from an authenticated user's own session.
+create table saved_vendors (
+  id uuid primary key default gen_random_uuid(),
+  buyer_id uuid not null references profiles(id) on delete cascade,
+  vendor_id uuid not null references profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (buyer_id, vendor_id)
+);
+alter table saved_vendors enable row level security;
+create policy "buyer read own saved vendors" on saved_vendors for select
+  using (buyer_id in (select id from profiles where auth_user_id = auth.uid()));
+create policy "buyer save own saved vendors" on saved_vendors for insert
+  with check (buyer_id in (select id from profiles where auth_user_id = auth.uid()));
+create policy "buyer unsave own saved vendors" on saved_vendors for delete
+  using (buyer_id in (select id from profiles where auth_user_id = auth.uid()));
+
+create table admin_users (
+  id uuid primary key default gen_random_uuid(),
+  auth_user_id uuid unique not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table admin_users enable row level security;
+
 insert into storage.buckets (id, name, public)
 values ('listings', 'listings', true)
 on conflict (id) do nothing;
@@ -330,17 +357,37 @@ end;
 $$;
 grant execute on function send_gift(uuid, uuid, uuid) to anon, authenticated;
 
--- NOTE: no identity check inside this function — anyone who knows a
--- vendor's profile id can read their balance. Not a money-moving risk (the
--- payout endpoint independently re-verifies identity), but a privacy gap
--- worth tightening later.
+-- Identity-checked: only the vendor themselves (matched via auth.uid()) or
+-- the server's service-role key (used by api/paystack/payout.ts, which has
+-- already authenticated the vendor independently via their bearer token)
+-- can read a vendor's balance. Previously any caller who knew a vendor's
+-- profile id could read it — not a money-moving risk (the payout endpoint
+-- independently re-verifies identity before paying out), but a privacy gap.
+-- Also folds in order revenue (95% vendor / 5% platform on paid orders),
+-- not just gift earnings (70% vendor / 30% platform), matching the actual
+-- payout split documented in the README.
 create or replace function vendor_available_balance(p_vendor_id uuid)
-returns numeric language sql security definer set search_path = public as $$
+returns numeric language plpgsql security definer set search_path = public as $$
+declare
+  v_result numeric;
+begin
+  if auth.role() <> 'service_role' and not exists (
+    select 1 from profiles where id = p_vendor_id and auth_user_id = auth.uid()
+  ) then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+
   select
     coalesce((select sum(vendor_earning_ngn) from gift_transactions where recipient_id = p_vendor_id), 0)
-    - coalesce((select sum(amount_ngn) from payouts where vendor_id = p_vendor_id and status in ('pending','success')), 0);
+    + coalesce((select sum(amount * 0.95) from orders where vendor_id = p_vendor_id and paid = true), 0)
+    - coalesce((select sum(amount_ngn) from payouts where vendor_id = p_vendor_id and status in ('pending','success')), 0)
+  into v_result;
+
+  return v_result;
+end;
 $$;
-grant execute on function vendor_available_balance(uuid) to anon, authenticated;
+revoke all on function vendor_available_balance(uuid) from public, anon;
+grant execute on function vendor_available_balance(uuid) to authenticated, service_role;
 
 insert into profiles (role, name, business_name, category, area, rating, reviews, verified, price_from, gradient, availability_status, availability_detail)
 values

@@ -39,7 +39,7 @@ export default function Market() {
       </div>
 
       <div className="px-4 pb-3">
-        <div className="flex items-center gap-2 bg-white border border-stone-light rounded-lg px-3 py-2.5">
+        <div className="flex items-center gap-2 bg-white border border-stone-light rounded-sm px-3 py-2.5 focus-within:border-ink transition">
           <Search size={16} className="text-stone shrink-0" />
           <input
             value={query}
@@ -55,10 +55,10 @@ export default function Market() {
           <button
             key={c}
             onClick={() => setActiveCategory(c)}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap border transition ${
+            className={`tag-label text-[11px] px-3 py-1.5 rounded-sm whitespace-nowrap border transition ${
               activeCategory === c
-                ? "bg-ink text-white border-ink"
-                : "border-stone-light text-[#5A5A6E]"
+                ? "bg-indigo text-white border-indigo"
+                : "border-stone-light text-ink/60"
             }`}
           >
             {c}
@@ -77,19 +77,23 @@ export default function Market() {
           <Link
             key={v.id}
             to={`/app/vendor/${v.id}`}
-            className="w-full text-left bg-white border border-stone-light rounded-xl overflow-hidden flex active:scale-[0.99] transition"
+            className="w-full text-left bg-white border border-stone-light rounded-sm overflow-hidden flex active:scale-[0.99] hover:border-ink transition"
           >
             <div className="w-20 h-20 shrink-0 relative" style={{ background: v.gradient }}>
               <span
                 className={`absolute bottom-1 left-1 w-2 h-2 rounded-full ring-2 ring-white ${
-                  v.availability_status === "open" ? "bg-[#4ADE80]" : "bg-mustard"
+                  v.availability_status === "open" ? "bg-green" : "bg-mustard"
                 }`}
               />
             </div>
             <div className="p-3 flex-1 min-w-0">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="text-sm font-semibold text-ink truncate">{v.name}</h3>
-                {v.verified && <ShieldCheck size={13} className="text-indigo shrink-0" />}
+                {v.verified && (
+                  <span className="tag-label inline-flex items-center gap-0.5 text-[9px] bg-indigo text-white px-1.5 py-[1px] rounded-sm shrink-0">
+                    <ShieldCheck size={10} /> Verified
+                  </span>
+                )}
                 {v.previously_ordered && <History size={12} className="text-stone shrink-0" />}
               </div>
               <p className="text-xs text-stone mt-0.5">{v.category}</p>
@@ -102,7 +106,9 @@ export default function Market() {
                   <MapPin size={11} /> {v.area}
                 </span>
               </div>
-              <p className="text-xs font-semibold text-green mt-1">{v.price_from}</p>
+              <p className="price-chip text-[11px] bg-ink text-white px-1.5 py-0.5 rounded-sm mt-1.5 inline-block">
+                {v.price_from}
+              </p>
             </div>
           </Link>
         ))}

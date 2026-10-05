@@ -47,8 +47,8 @@ export default function VendorLayout() {
                 to={t.to}
                 end={t.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full whitespace-nowrap ${
-                    isActive ? "bg-ink text-white" : "text-[#5A5A6E] hover:bg-stone-light/60"
+                  `flex items-center gap-1.5 tag-label text-xs px-3 py-2 rounded-sm whitespace-nowrap ${
+                    isActive ? "bg-ink text-white" : "text-ink/60 hover:bg-stone-light/60"
                   }`
                 }
               >

@@ -78,9 +78,9 @@ export default function VendorVerification() {
     return (
       <div className="max-w-lg">
         <h1 className="text-2xl font-display font-semibold text-ink mb-1">Verification</h1>
-        <div className="bg-white border border-stone-light rounded-lg p-6 mt-4">
+        <div className="bg-white border border-stone-light rounded-sm p-6 mt-4">
           <p className="text-sm text-ink font-semibold mb-1.5">Not available on Stripe yet</p>
-          <p className="text-xs text-[#5A5A6E]">
+          <p className="text-xs text-ink/60">
             The verification badge currently only works for Paystack-routed vendors (Naira billing).
             Stripe-side verification isn't built yet — see README.
           </p>
@@ -100,11 +100,11 @@ export default function VendorVerification() {
       {loading ? (
         <p className="text-sm text-stone">Loading...</p>
       ) : isActive ? (
-        <div className="bg-green/10 border border-green/20 rounded-lg p-5 flex items-start gap-3">
+        <div className="bg-green/10 border border-green/20 rounded-sm p-5 flex items-start gap-3">
           <ShieldCheck size={22} className="text-green shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-ink">You're verified</p>
-            <p className="text-xs text-[#5A5A6E] mt-1">
+            <p className="text-xs text-ink/60 mt-1">
               Active until{" "}
               {sub?.current_period_end
                 ? new Date(sub.current_period_end).toLocaleDateString()
@@ -114,22 +114,22 @@ export default function VendorVerification() {
           </div>
         </div>
       ) : isPastDue ? (
-        <div className="bg-mustard/10 border border-mustard/20 rounded-lg p-5">
+        <div className="bg-mustard/10 border border-mustard/20 rounded-sm p-5">
           <p className="text-sm font-semibold text-ink">Payment failed</p>
-          <p className="text-xs text-[#5A5A6E] mt-1">
+          <p className="text-xs text-ink/60 mt-1">
             Your last renewal charge didn't go through. Paystack will retry automatically — update
             your card on file if it keeps failing.
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-stone-light rounded-lg p-6">
+        <div className="bg-white border border-stone-light rounded-sm p-6">
           <div className="flex items-baseline gap-1 mb-1">
             <span className="text-3xl font-display font-semibold text-ink">
               ₦{VERIFICATION_FEE_NGN.toLocaleString()}
             </span>
             <span className="text-sm text-stone">/month</span>
           </div>
-          <ul className="text-sm text-[#5A5A6E] space-y-1.5 mt-4 mb-6">
+          <ul className="text-sm text-ink/60 space-y-1.5 mt-4 mb-6">
             <li>✓ Verified badge on your profile and listings</li>
             <li>✓ Priority placement in your category</li>
             <li>✓ Higher buyer trust and conversion</li>
@@ -137,7 +137,7 @@ export default function VendorVerification() {
           <button
             onClick={subscribe}
             disabled={activating}
-            className="w-full bg-indigo disabled:opacity-60 text-white text-sm font-semibold py-3 rounded-lg"
+            className="w-full bg-indigo disabled:opacity-60 text-white text-sm font-semibold py-3 rounded-sm"
           >
             {activating ? "Processing..." : "Subscribe with Paystack"}
           </button>

@@ -227,13 +227,13 @@ export default function OneLetterDuel() {
       </Link>
 
       {status === "waiting" && (
-        <div className="bg-white border border-stone-light rounded-lg p-6 text-center">
+        <div className="bg-white border border-stone-light rounded-sm p-6 text-center">
           <Users size={22} className="text-indigo mx-auto mb-2" />
           <p className="text-sm font-semibold text-ink">Waiting for an opponent...</p>
           <p className="text-xs text-stone mt-1 mb-4">Share this code with a friend</p>
           <button
             onClick={copyCode}
-            className="inline-flex items-center gap-2 bg-paper border border-stone-light rounded-lg px-4 py-2.5 font-mono text-lg tracking-widest text-ink"
+            className="inline-flex items-center gap-2 bg-paper border border-stone-light rounded-sm px-4 py-2.5 font-mono text-lg tracking-widest text-ink"
           >
             {roomCode} {copied ? <Check size={16} className="text-green" /> : <Copy size={14} />}
           </button>
@@ -249,13 +249,13 @@ export default function OneLetterDuel() {
           </div>
 
           {opponentLeft && status === "playing" && (
-            <p className="text-xs text-[#96760F] bg-mustard/10 rounded-lg px-3 py-2 mb-3 text-center">
+            <p className="text-xs text-mustard bg-mustard/10 rounded-sm px-3 py-2 mb-3 text-center">
               Opponent disconnected — they may reconnect, or you can leave.
             </p>
           )}
 
           {status === "playing" && (
-            <div className="bg-white border border-stone-light rounded-xl p-6 text-center">
+            <div className="bg-white border border-stone-light rounded-sm p-6 text-center">
               <p className="text-4xl font-display font-semibold text-ink tracking-wide uppercase">
                 {currentWord}
               </p>
@@ -275,12 +275,12 @@ export default function OneLetterDuel() {
                     onKeyDown={(e) => e.key === "Enter" && submitMove()}
                     autoFocus
                     placeholder="Type a word..."
-                    className="w-full text-center px-3.5 py-3 border-[1.5px] border-stone-light rounded-lg text-lg tracking-wide outline-none focus:border-indigo"
+                    className="w-full text-center px-3.5 py-3 border-[1.5px] border-stone-light rounded-sm text-lg tracking-wide outline-none focus:border-indigo"
                   />
                   {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
                   <button
                     onClick={submitMove}
-                    className="w-full mt-3 bg-indigo text-white text-sm font-semibold py-3 rounded-lg"
+                    className="w-full mt-3 bg-indigo text-white text-sm font-semibold py-3 rounded-sm"
                   >
                     Submit
                   </button>
@@ -290,14 +290,14 @@ export default function OneLetterDuel() {
           )}
 
           {status === "finished" && (
-            <div className="bg-white border border-stone-light rounded-xl p-6 text-center">
+            <div className="bg-white border border-stone-light rounded-sm p-6 text-center">
               <Trophy size={28} className={winnerId === myId ? "text-mustard mx-auto" : "text-stone mx-auto"} />
               <p className="text-lg font-display font-semibold text-ink mt-2">
                 {winnerId === myId ? "You won this round!" : "You lost this round"}
               </p>
               <button
                 onClick={rematch}
-                className="w-full mt-4 bg-indigo text-white text-sm font-semibold py-3 rounded-lg"
+                className="w-full mt-4 bg-indigo text-white text-sm font-semibold py-3 rounded-sm"
               >
                 Rematch
               </button>

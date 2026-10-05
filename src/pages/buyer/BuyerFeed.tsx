@@ -33,7 +33,7 @@ export default function BuyerFeed() {
 
   return (
     <div className="px-4 pb-4">
-      <div className="flex items-center gap-2 bg-white border border-stone-light rounded-lg px-3 py-2.5 mb-3">
+      <div className="flex items-center gap-2 bg-white border border-stone-light rounded-sm px-3 py-2.5 mb-3">
         <Search size={16} className="text-stone shrink-0" />
         <input
           value={query}
@@ -58,9 +58,9 @@ export default function BuyerFeed() {
                   key={l.id}
                   to={vendor ? `/app/vendor/${vendor.id}` : "#"}
                   onClick={() => recordAdClick(l.ad_campaign_id)}
-                  className="bg-white border border-mustard/40 rounded-lg overflow-hidden relative"
+                  className="bg-white border border-mustard/40 rounded-sm overflow-hidden relative"
                 >
-                  <span className="absolute top-1.5 left-1.5 z-10 flex items-center gap-0.5 bg-mustard text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full">
+                  <span className="absolute top-1.5 left-1.5 z-10 flex items-center gap-0.5 tag-label bg-mustard text-ink text-[9px] px-1.5 py-0.5 rounded-sm">
                     <Zap size={9} className="fill-white" /> Boosted
                   </span>
                   <div className="aspect-square bg-stone-light flex items-center justify-center text-stone text-xs">
@@ -89,7 +89,7 @@ export default function BuyerFeed() {
                 <Link
                   key={l.id}
                   to={vendor ? `/app/vendor/${vendor.id}` : "#"}
-                  className="bg-white border border-stone-light rounded-lg overflow-hidden"
+                  className="bg-white border border-stone-light rounded-sm overflow-hidden"
                 >
                   <div className="aspect-square bg-stone-light flex items-center justify-center text-stone text-xs">
                     {l.media_type === "video" ? "🎥 video" : "🖼 photo"}
@@ -113,7 +113,7 @@ export default function BuyerFeed() {
           <Link
             key={v.id}
             to={`/app/vendor/${v.id}`}
-            className="w-full text-left bg-white border border-stone-light rounded-xl overflow-hidden flex active:scale-[0.99] transition"
+            className="w-full text-left bg-white border border-stone-light rounded-sm overflow-hidden flex active:scale-[0.99] transition"
           >
             <div className="w-20 h-20 shrink-0" style={{ background: v.gradient }} />
             <div className="p-3 flex-1 min-w-0">

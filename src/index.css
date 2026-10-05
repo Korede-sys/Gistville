@@ -1,18 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
+/*
+ * GistVille visual system — bold, high-contrast "fast-fashion marketplace"
+ * language (Shein-inspired): black/white base, a hot flash-sale red as the
+ * one accent that carries urgency and trust (CTAs, verified check, prices),
+ * gold for ratings/sale tags, dense bold type. Class names below kept
+ * stable (bg-indigo, text-mustard, font-display, font-mono, etc.) so every
+ * page that already uses the token classes repaints automatically.
+ */
 @theme {
-  --color-paper: #faf6ef;
-  --color-ink: #1a1a2e;
-  --color-indigo: #2b4c7e;
-  --color-indigo-deep: #1e3760;
-  --color-mustard: #d4a017;
-  --color-green: #1f7a4d;
-  --color-stone: #8b8378;
-  --color-stone-light: #e8e1d3;
+  --color-paper: #ffffff;
+  --color-ink: #121212;
+  --color-indigo: #ff2d55;
+  --color-indigo-deep: #d6163e;
+  --color-mustard: #ffb300;
+  --color-green: #16a34a;
+  --color-stone: #767676;
+  --color-stone-light: #ececec;
 
-  --font-display: "Fraunces", serif;
-  --font-sans: "Work Sans", sans-serif;
-  --font-mono: "Space Mono", monospace;
+  --font-display: "Anton", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "Oswald", sans-serif;
 }
 
 body {
@@ -23,7 +32,26 @@ body {
 
 .font-display {
   font-family: var(--font-display);
+  letter-spacing: 0.01em;
 }
 .font-mono {
   font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* Shein-style bold uppercase "tag" label — used for sale/new/verified chips */
+.tag-label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Flash-sale style price chip: bold black/red background, white text */
+.price-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }

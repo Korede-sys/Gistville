@@ -27,7 +27,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-paper flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md bg-white border border-stone-light rounded-lg p-8">
+      <div className="w-full max-w-md bg-white border border-stone-light rounded-sm p-8">
         <div className="font-display font-bold text-xl mb-1">
           Gist<span className="text-indigo">Ville</span>
         </div>
@@ -35,7 +35,7 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">Email</label>
+            <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">Email</label>
             <input
               required
               type="email"
@@ -45,7 +45,7 @@ export default function Login() {
             />
           </div>
           <div>
-            <label className="block text-[13px] font-semibold text-[#4A4A5E] mb-1.5">Password</label>
+            <label className="block text-[13px] font-semibold text-ink/80 mb-1.5">Password</label>
             <input
               required
               type="password"

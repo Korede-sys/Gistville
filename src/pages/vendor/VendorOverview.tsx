@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import { ShieldCheck, ShieldOff } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { fetchVendorListings, fetchVendorOrders, fetchVendorAds } from "../../lib/data";
+import { isEffectivelyVerified } from "../../lib/verification";
 
 export default function VendorOverview() {
   const { profile } = useAuth();
   const [counts, setCounts] = useState({ listings: 0, orders: 0, ads: 0 });
+  const verified = isEffectivelyVerified(profile?.verified, profile?.verified_until);
 
   useEffect(() => {
     if (!profile) return;
@@ -27,31 +29,31 @@ export default function VendorOverview() {
       <p className="text-sm text-stone mb-6">Here's how {profile?.business_name} is doing.</p>
 
       <div
-        className={`rounded-lg p-4 mb-6 flex items-center justify-between ${
-          profile?.verified ? "bg-green/10" : "bg-mustard/10"
+        className={`rounded-sm p-4 mb-6 flex items-center justify-between ${
+          verified ? "bg-green/10" : "bg-mustard/10"
         }`}
       >
         <div className="flex items-center gap-2.5">
-          {profile?.verified ? (
+          {verified ? (
             <ShieldCheck size={20} className="text-green" />
           ) : (
-            <ShieldOff size={20} className="text-[#96760F]" />
+            <ShieldOff size={20} className="text-mustard" />
           )}
           <div>
             <p className="text-sm font-semibold text-ink">
-              {profile?.verified ? "You're a verified vendor" : "Not verified yet"}
+              {verified ? "You're a verified vendor" : "Not verified yet"}
             </p>
-            <p className="text-xs text-[#5A5A6E]">
-              {profile?.verified
+            <p className="text-xs text-ink/60">
+              {verified
                 ? "Your listings get priority placement in search."
                 : "Verified vendors convert more browsers into buyers."}
             </p>
           </div>
         </div>
-        {!profile?.verified && (
+        {!verified && (
           <Link
             to="/vendor/verification"
-            className="bg-indigo text-white text-xs font-semibold px-4 py-2 rounded-full whitespace-nowrap"
+            className="tag-label bg-indigo text-white text-xs px-4 py-2 rounded-sm whitespace-nowrap"
           >
             Get verified
           </Link>
@@ -67,7 +69,7 @@ export default function VendorOverview() {
           <Link
             key={s.label}
             to={s.to}
-            className="bg-white border border-stone-light rounded-lg p-5 hover:border-indigo transition"
+            className="bg-white border border-stone-light rounded-sm p-5 hover:border-indigo transition"
           >
             <p className="text-3xl font-display font-semibold text-ink">{s.value}</p>
             <p className="text-xs text-stone mt-1">{s.label}</p>

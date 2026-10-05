@@ -46,7 +46,7 @@ Order checkout and the N1,000/month verification badge both go through Paystack'
 
 **Why the server verify step exists**: a client-side "success" callback is not proof money moved. `api/paystack/verify.ts` re-checks the transaction and charged amount directly with Paystack's API before writing anything to the database.
 
-**Known simplification**: `subscription.disable` (webhook) revokes the verified badge immediately rather than at the end of the already-paid period.
+**Cancellation grace period**: `subscription.disable` (webhook) no longer revokes the verified badge immediately — see `src/lib/verification.ts`. The badge stays live until `verified_until` (set on the last successful charge) actually runs out.
 
 ## Connecting Stripe (everywhere else)
 Vendors outside Paystack's 5 supported countries route to Stripe Connect instead. Uses **destination charges** - a buyer's payment splits automatically at charge time (5% platform fee stays with GistVille, the rest transfers straight to the vendor's connected account). Stripe pays vendors out to their own bank on its own schedule - no manual "withdraw" step to build for Stripe vendors.
@@ -59,6 +59,25 @@ Vendors outside Paystack's 5 supported countries route to Stripe Connect instead
 **Gifting economy is Paystack/Naira-only.** A Stripe-routed vendor's profile won't show "Send a gift" at all - gifts are NGN-denominated end to end, no currency conversion built. Enforced in two places (UI hidden + a defense-in-depth check in the send handler).
 
 **Verification badge is also Paystack-only** for now - Stripe vendors see a clear "not available yet" message on `/vendor/verification`.
+
+## Connecting Twilio (WhatsApp/SMS notifications)
+Order creation, order status changes, and dispute filing/resolution all fire a
+best-effort notification via `api/notify.ts` / `api/_lib/notifications.ts` —
+WhatsApp first, falling back to SMS. Missing Twilio env vars simply skip the
+send (never blocks the underlying order/dispute action).
+
+1. Create a free account at https://www.twilio.com/try-twilio.
+2. From the Console dashboard, copy your Account SID and Auth Token into
+   `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`.
+3. For WhatsApp (recommended): Console -> Messaging -> Try it out -> Send a
+   WhatsApp message. Use the sandbox number Twilio gives you as
+   `TWILIO_WHATSAPP_FROM` (e.g. `whatsapp:+14155238886`). Each recipient has
+   to join the sandbox once (sends a join code to that number from their own
+   WhatsApp) before you can message them — a paid WhatsApp Business sender
+   removes this limitation when you're ready to go live.
+4. For SMS instead/as a fallback: buy a Twilio number (Console -> Phone
+   Numbers -> Buy a number) and set `TWILIO_SMS_FROM`.
+5. Add whichever of the four vars you set up to your Vercel env vars.
 
 ## Multi-country payment routing
 `src/lib/payments.ts` maps a vendor's country to a provider at signup: Nigeria/Ghana/South Africa/Kenya/Cote d'Ivoire -> Paystack, everywhere else -> Stripe. Stripe-routed vendors are priced in their actual local currency (`COUNTRY_CURRENCY` map — GBP for UK, EUR for Germany/France, CAD for Canada, AUD for Australia, INR for India, USD as the fallback for anywhere not explicitly listed), not a single global USD. The Stripe checkout backend (`api/stripe/checkout.ts`) already reads currency per-order rather than assuming a fixed one, so this was purely a mapping gap on the frontend, not an integration limitation — verified with a real `tsc` type-check and production `vite build` after the change, not just read-through.
@@ -76,28 +95,39 @@ Real photo/video upload to Supabase Storage (`listings` bucket - public read, wr
 Boosted campaigns surface in a "Boosted" section at the top of the buyer feed. Viewing records an impression (atomic RPC); tapping records a click. Spend depletes the campaign's budget until exhausted. Simplified - no targeting, no frequency capping, no real CPM auction.
 
 ## Admin - disputes
-`/admin/disputes` - password-gated (not full RBAC), backed by `api/admin/disputes.ts` / `resolve-dispute.ts` using the service role key. Set `ADMIN_ACCESS_CODE`. Treat it as a shared password, not per-admin login.
+`/admin/disputes` - real per-admin login, not a shared password. An admin logs in with
+their own Supabase account (same auth as any buyer/vendor), then `api/_lib/authenticateAdmin.ts`
+checks the `admin_users` table (service-role only — no client-side policies at all) for their
+`auth_user_id`. `ADMIN_ACCESS_CODE` is now only the **bootstrap** secret: a logged-in user submits
+it once via `api/admin/bootstrap-admin.ts` to add themselves to `admin_users`. Rotate the code
+once you've bootstrapped the admins you need — it's not checked on every request anymore.
 
 ## Row Level Security - current state
 - `profiles`, `listings`, `ad_campaigns`, `vendor_subscriptions`, `payouts`, `coin_purchases`, `gift_transactions`: scoped to the owning user via `auth_user_id = auth.uid()`.
 - `orders`: select/insert scoped to the buyer who placed it or the vendor fulfilling it; update is vendor-owner-only; `paid` is written server-side regardless of policy.
 - `disputes`: insert is public; select is scoped to the vendor whose order it concerns; the admin view bypasses this via service role.
+- `saved_vendors`: scoped to the owning buyer via `auth_user_id = auth.uid()` (select/insert/delete).
+- `admin_users`: no policies at all — only ever readable via the service-role key from `api/admin/*.ts`.
 - `messages`, `vendor_requests`, `waitlist`: insert/select remain public.
 - `add_coins()`: **service-role only.** Mints coins with zero balance/payment check - see the security note below.
+- `vendor_available_balance()`: identity-checked — only the vendor themselves (`auth.uid()`) or the service role (used by `api/paystack/payout.ts`, which has already authenticated the vendor independently) can read a given vendor's balance. Previously callable by anyone who knew a vendor's profile id.
 
 ## A real security bug found and fixed during development
 Supabase grants `EXECUTE` on new functions to the `anon`/`authenticated` roles by default - an earlier `revoke ... from public` did NOT undo this. `add_coins()` was callable directly by any anon or logged-in client, not just the server. Anyone could have minted themselves unlimited coins, sent them as gifts, and withdrawn real money via the payout flow. Found by actually running Supabase's security advisor against the live project; fixed with an explicit `revoke execute ... from anon, authenticated`; confirmed fixed by re-running the advisor. `supabase/schema.sql` includes this fix from the start.
 
 ## Known gaps, not silently left
-- **Paystack recurring billing**: no grace period on cancellation.
-- **Real admin auth**: shared access code, not per-admin login.
 - **Multiplayer game**: no stranger matchmaking, no spectating, no leaderboards, no server-authoritative referee.
 - **Stripe verification + gifting**: not built - Stripe vendors can sell and get paid for orders, nothing else monetization-wise yet.
 - **Live streaming + video calls**: not started. Needs a WebRTC provider decision (Agora recommended for Africa network performance) before any code gets written.
 - **Vendor payout OTP finalization** (Paystack): if a transfer comes back with status `otp`, it's stuck until finalized manually in the Paystack dashboard.
-- **WhatsApp/SMS notifications** for orders, requests, disputes.
-- **Saved vendors**: stub only.
-- **`vendor_available_balance()`** has no identity check - anyone who knows a vendor's profile ID can read their balance (not a money risk, the payout endpoint re-verifies independently; a privacy gap worth tightening).
+
+### Fixed since the last pass
+- **Paystack recurring billing grace period**: `subscription.disable` no longer revokes the verified badge immediately — see `src/lib/verification.ts`.
+- **Real admin auth**: per-admin login via `admin_users`, not a shared access code (which is now only a one-time bootstrap secret).
+- **WhatsApp/SMS notifications**: order created/status changed, dispute filed/resolved — see "Connecting Twilio" above. Requires your own Twilio account/credentials to actually send.
+- **Saved vendors**: fully wired — `saved_vendors` table, bookmark button on a vendor's profile, real list at `/buyer/saved`.
+- **`vendor_available_balance()` identity check**: now scoped to the vendor's own `auth.uid()` (or the service role for the payout endpoint), and folds in order revenue (95%) alongside gift earnings (70%) — the version of this function in this file previously only counted gifts, which didn't match how payouts actually work.
+- **Visual redesign**: bold, high-contrast "fast-fashion marketplace" look (flash-sale red/black, gold accents, sharp-cornered tags and price chips, bold condensed display type) — see `src/index.css` for the token system; most of the app repaints from those tokens automatically.
 
 ## Deployment status
 Not yet deployed. Code is complete and the Supabase backend is live and verified; getting this onto Vercel (previously blocked by a connector permissions issue) is the next real step before any of this is usable by an actual person.
