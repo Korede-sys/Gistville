@@ -175,6 +175,23 @@ create table app_settings (
   value text not null
 );
 
+-- Single-use ledger for Paystack payment references. api/paystack/verify.ts
+-- inserts the reference here (primary key = natural dedupe) before doing
+-- any purpose-specific write; a conflict means this exact payment has
+-- already been consumed once (for an order, a verification charge, or a
+-- coin purchase) and must be rejected. Without this, a single successful
+-- payment's reference could be replayed indefinitely against /api/paystack/verify
+-- to mark unlimited orders "paid", extend the verified badge, or mint coins
+-- for free — Paystack's own "status: success" check alone doesn't prevent
+-- the *same* reference being submitted more than once.
+create table paystack_transactions (
+  reference text primary key,
+  purpose text not null,
+  created_at timestamptz not null default now()
+);
+alter table paystack_transactions enable row level security;
+-- No policies — service-role only (api/paystack/verify.ts).
+
 -- Real per-admin auth (replaces the shared ADMIN_ACCESS_CODE as the ongoing
 -- access control). A normal Supabase-authenticated user becomes an admin by
 -- being added here; RLS has no policies on this table at all, so it is only
@@ -245,8 +262,32 @@ create policy "buyer insert own orders" on orders for insert
 create policy "vendor update own orders" on orders for update
   using (vendor_id in (select id from profiles where auth_user_id = auth.uid()));
 
-create policy "public read messages" on messages for select using (true);
-create policy "public insert messages" on messages for insert with check (true);
+-- Scoped to the two participants on the order (previously "public" — any
+-- logged-in or anonymous caller could read or write into ANY order's
+-- thread, not just their own). Chat is now real (see src/lib/data.ts
+-- fetchMessages/sendMessage/subscribeToMessages and src/pages/Chat.tsx /
+-- src/pages/vendor/VendorChat.tsx), so this needed to actually be private.
+create policy "participant read messages" on messages for select
+  using (
+    order_id in (
+      select o.id from orders o
+      where o.buyer_id in (select id from profiles where auth_user_id = auth.uid())
+         or o.vendor_id in (select id from profiles where auth_user_id = auth.uid())
+    )
+  );
+create policy "participant insert messages" on messages for insert
+  with check (
+    order_id in (
+      select o.id from orders o
+      where o.buyer_id in (select id from profiles where auth_user_id = auth.uid())
+         or o.vendor_id in (select id from profiles where auth_user_id = auth.uid())
+    )
+  );
+
+-- Required for Supabase Realtime (postgres_changes) subscriptions on this
+-- table — without it, INSERTs are saved but never pushed live to the
+-- other participant's open chat screen.
+alter publication supabase_realtime add table messages;
 
 create policy "public read requests" on vendor_requests for select using (true);
 create policy "public insert requests" on vendor_requests for insert with check (true);

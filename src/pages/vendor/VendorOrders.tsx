@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { fetchVendorOrders, updateOrderStatus } from "../../lib/data";
 import { ORDER_STEPS } from "../../types";
@@ -76,17 +78,25 @@ export default function VendorOrders() {
                   </span>
                 </div>
               </div>
-              {!isLast && (
-                <button
-                  onClick={() => advance(o)}
-                  disabled={updatingId === o.id}
-                  className="w-full mt-3 border border-stone-light text-ink/60 text-xs font-semibold py-2 rounded-sm disabled:opacity-60"
+              <div className="flex gap-2 mt-3">
+                <Link
+                  to={`/vendor/orders/${o.id}/chat`}
+                  className="flex items-center justify-center gap-1.5 border border-stone-light text-ink/60 text-xs font-semibold py-2 px-3 rounded-sm"
                 >
-                  {updatingId === o.id
-                    ? "Updating..."
-                    : `Mark as "${STATUS_LABEL[ORDER_STEPS[ORDER_STEPS.indexOf(o.status) + 1]]}"`}
-                </button>
-              )}
+                  <MessageCircle size={13} /> Message buyer
+                </Link>
+                {!isLast && (
+                  <button
+                    onClick={() => advance(o)}
+                    disabled={updatingId === o.id}
+                    className="flex-1 border border-stone-light text-ink/60 text-xs font-semibold py-2 rounded-sm disabled:opacity-60"
+                  >
+                    {updatingId === o.id
+                      ? "Updating..."
+                      : `Mark as "${STATUS_LABEL[ORDER_STEPS[ORDER_STEPS.indexOf(o.status) + 1]]}"`}
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { fetchBuyerOrders } from "../../lib/data";
 import type { Order } from "../../types";
@@ -45,7 +47,15 @@ export default function BuyerOrders() {
                 ₦{o.amount.toLocaleString()}
               </p>
             </div>
-            <p className="text-xs text-stone mt-1">{STATUS_LABEL[o.status]}</p>
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-xs text-stone">{STATUS_LABEL[o.status]}</p>
+              <Link
+                to={`/app/vendor/${o.vendor_id}/chat`}
+                className="flex items-center gap-1 text-[11px] font-semibold text-indigo"
+              >
+                <MessageCircle size={12} /> Message vendor
+              </Link>
+            </div>
           </div>
         ))}
       </div>

@@ -33,6 +33,26 @@ export default async function handler(req: Request): Promise<Response> {
     );
   }
 
+  // Guard against double-submission (double-click, a retried request, two
+  // open tabs): vendor_available_balance() is read, then a payouts row is
+  // inserted, in two separate steps below — without this check, two
+  // concurrent requests could both read the same balance before either
+  // insert lands, and both proceed to transfer the same money out via
+  // Paystack. Rejecting outright while a payout is already mid-flight
+  // closes that window without needing DB-level locking.
+  const { data: pendingPayout } = await supabase
+    .from("payouts")
+    .select("id")
+    .eq("vendor_id", vendor.profileId)
+    .eq("status", "pending")
+    .maybeSingle();
+  if (pendingPayout) {
+    return new Response(
+      JSON.stringify({ ok: false, error: "A payout is already in progress — wait for it to finish first." }),
+      { status: 409 }
+    );
+  }
+
   const { data: balance, error: balErr } = await supabase.rpc("vendor_available_balance", {
     p_vendor_id: vendor.profileId,
   });

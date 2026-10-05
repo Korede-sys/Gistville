@@ -31,7 +31,7 @@ Order checkout and the N1,000/month verification badge both go through Paystack'
 
 1. Get keys from Paystack dashboard -> Settings -> API Keys & Webhooks.
 2. Add to Vercel env vars: `VITE_PAYSTACK_PUBLIC_KEY` (client), `PAYSTACK_SECRET_KEY` (server), `SUPABASE_SERVICE_ROLE_KEY` (server).
-3. **Recurring billing needs a webhook**: register `https://<your-domain>/api/paystack/webhook` in the Paystack dashboard. Without it, the first charge still works but monthly renewals silently stop.
+3. **Recurring billing and payout status both need the webhook**: register `https://<your-domain>/api/paystack/webhook` in the Paystack dashboard (Paystack sends every event type to this one URL; the handler filters by `event.event`). Without it: the first subscription charge still works but monthly renewals silently stop, and a payout's real status (`transfer.success` / `transfer.failed` / `transfer.reversed`) never syncs back — a transfer that needed manual OTP finalization in the dashboard would stay "pending" in our own `payouts` table forever, even after you finalize it.
 4. **Vendor payout** (`/vendor/gifts`, labeled "Earnings" in the UI, for Paystack vendors): real bank withdrawal via Paystack Transfers. The withdrawable amount is recomputed server-side every time (`vendor_available_balance()`), never trusted from the client. **Includes both order sales (95%, 5% platform commission) and gift earnings (70%)** — order revenue previously never fed into the payout balance at all, which meant Paystack vendors had no way to get paid for actual sales, only for gifts. Fixed and verified against the live database (inserted a real test order, confirmed the function returned exactly 95% of it, then cleaned up).
 
 ### Getting paid — setup checklist
@@ -45,6 +45,8 @@ Order checkout and the N1,000/month verification badge both go through Paystack'
 8. **Orders (Stripe vendors)**: 95% vendor / 5% you, auto-split and auto-paid-out by Stripe at the moment of sale — nothing manual.
 
 **Why the server verify step exists**: a client-side "success" callback is not proof money moved. `api/paystack/verify.ts` re-checks the transaction and charged amount directly with Paystack's API before writing anything to the database.
+
+**Payment-replay guard**: confirming "success" with Paystack isn't enough on its own — a reference could otherwise be resubmitted to `/api/paystack/verify` more than once and get accepted every time (marking unlimited orders paid, re-extending the verified badge, or minting coins repeatedly from one real payment). `paystack_transactions` is a single-use ledger: the endpoint claims the reference there before doing any purpose-specific write, and releases the claim again if the request turns out to be a legitimate failure (order not found, amount mismatch) rather than an actual replay, so a genuine retry still works.
 
 **Cancellation grace period**: `subscription.disable` (webhook) no longer revokes the verified badge immediately — see `src/lib/verification.ts`. The badge stays live until `verified_until` (set on the last successful charge) actually runs out.
 
@@ -128,6 +130,8 @@ Supabase grants `EXECUTE` on new functions to the `anon`/`authenticated` roles b
 - **Saved vendors**: fully wired — `saved_vendors` table, bookmark button on a vendor's profile, real list at `/buyer/saved`.
 - **`vendor_available_balance()` identity check**: now scoped to the vendor's own `auth.uid()` (or the service role for the payout endpoint), and folds in order revenue (95%) alongside gift earnings (70%) — the version of this function in this file previously only counted gifts, which didn't match how payouts actually work.
 - **Visual redesign**: bold, high-contrast "fast-fashion marketplace" look (flash-sale red/black, gold accents, sharp-cornered tags and price chips, bold condensed display type) — see `src/index.css` for the token system; most of the app repaints from those tokens automatically.
+- **Paystack payment-replay guard**: a successful payment reference could previously be resubmitted to `/api/paystack/verify` more than once and get accepted every time — marking unlimited orders paid, re-extending the verified badge, or minting coins for free from a single real payment. `paystack_transactions` is now a single-use ledger that closes this.
+- **Payout double-submission race**: `/api/paystack/payout` read the vendor's balance and inserted the `payouts` row as two separate steps with no lock between them, so two concurrent requests (double-click, a retried request) could both read the same balance and both trigger a real Paystack transfer for it. Now rejects outright while a payout is already `pending`. Also added the missing `transfer.success` / `transfer.failed` / `transfer.reversed` webhook handling so a payout's status actually syncs back — without it, a transfer stuck on OTP would stay "pending" in our own table forever even after you finalize it in the Paystack dashboard.
 
 ## Deployment status
 Not yet deployed. Code is complete and the Supabase backend is live and verified; getting this onto Vercel (previously blocked by a connector permissions issue) is the next real step before any of this is usable by an actual person.

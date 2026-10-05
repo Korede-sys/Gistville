@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -10,12 +10,21 @@ import {
   X,
   Lock,
 } from "lucide-react";
-import { fetchVendorById, fileDispute, createOrder, verifyPaystackPayment, fetchOrderById } from "../lib/data";
+import {
+  fetchVendorById,
+  fileDispute,
+  verifyPaystackPayment,
+  fetchOrderById,
+  ensureConversationOrder,
+  fetchMessages,
+  sendMessage,
+  subscribeToMessages,
+} from "../lib/data";
 import { payWithPaystack } from "../lib/paystack";
 import { createStripeCheckout } from "../lib/stripe";
 import { formatMoney, currencyForCountry } from "../lib/payments";
 import { useAuth } from "../lib/auth";
-import type { Vendor, OrderStatus } from "../types";
+import type { Vendor, OrderStatus, Message } from "../types";
 import { ORDER_STEPS } from "../types";
 
 const STEP_LABELS: Record<OrderStatus, string> = {
@@ -24,13 +33,6 @@ const STEP_LABELS: Record<OrderStatus, string> = {
   ready: "Ready for pickup/delivery",
   completed: "Completed",
 };
-
-const seedMessages = [
-  { from: "vendor" as const, text: "Good afternoon! Yes, I can do the aso-ebi gown for your event." },
-  { from: "buyer" as const, text: "Great. How much for a gown + gele combo?" },
-  { from: "vendor" as const, text: "₦18,000 total. Ready in 5 days." },
-  { from: "buyer" as const, text: "Okay, I'll go ahead and pay now." },
-];
 
 function DisputeModal({ orderId, onClose }: { orderId: string; onClose: () => void }) {
   const [reason, setReason] = useState("");
@@ -105,6 +107,10 @@ export default function Chat() {
   const [showDispute, setShowDispute] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const isStripe = vendor?.payment_provider === "stripe";
   const ORDER_DESCRIPTION = "Gown + gele combo";
@@ -115,6 +121,46 @@ export default function Chat() {
     if (!id) return;
     fetchVendorById(id).then(setVendor);
   }, [id]);
+
+  // Chat needs an order to attach messages to. A buyer can message a
+  // vendor before paying, so this ensures/reuses a draft order as soon as
+  // both the vendor and a logged-in buyer profile are available — it does
+  // NOT send a "new order" notification; only an actual payment does.
+  useEffect(() => {
+    if (!vendor || !profile || profile.role !== "buyer") return;
+    let cancelled = false;
+    ensureConversationOrder({
+      vendorId: vendor.id,
+      buyerId: profile.id,
+      buyerName: profile.name,
+      buyerPhone: profile.phone,
+      description: ORDER_DESCRIPTION,
+      amount: ORDER_AMOUNT,
+      currency: ORDER_CURRENCY,
+    }).then((res) => {
+      if (cancelled || !res.ok || !res.order) return;
+      setOrderId(res.order.id);
+      setPaid(res.order.paid);
+      setStatus(res.order.status);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendor, profile]);
+
+  useEffect(() => {
+    if (!orderId) return;
+    fetchMessages(orderId).then(setMessages);
+    const unsubscribe = subscribeToMessages(orderId, (message) => {
+      setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
+    });
+    return unsubscribe;
+  }, [orderId]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -148,6 +194,16 @@ export default function Chat() {
     if (order) setStatus(order.status);
   };
 
+  const handleSend = async () => {
+    const text = draft.trim();
+    if (!text || !orderId || sending) return;
+    setSending(true);
+    setDraft("");
+    const res = await sendMessage(orderId, "buyer", text);
+    setSending(false);
+    if (!res.ok) setDraft(text);
+  };
+
   const handlePay = async () => {
     if (!vendor) return;
 
@@ -159,24 +215,31 @@ export default function Chat() {
     setPaying(true);
     setPayError(null);
 
-    const orderRes = await createOrder({
-      vendorId: vendor.id,
-      buyerId: profile.id,
-      buyerName: profile.name,
-      buyerPhone: profile.phone,
-      description: ORDER_DESCRIPTION,
-      amount: ORDER_AMOUNT,
-      currency: ORDER_CURRENCY,
-    });
-    if (!orderRes.ok || !orderRes.order) {
-      setPayError(orderRes.error ?? "Couldn't create the order.");
-      setPaying(false);
-      return;
+    // The conversation effect above should have already ensured a draft
+    // order exists; fall back to creating one here just in case (e.g. the
+    // buyer logged in and clicked Pay before that effect resolved).
+    let activeOrderId = orderId;
+    if (!activeOrderId) {
+      const orderRes = await ensureConversationOrder({
+        vendorId: vendor.id,
+        buyerId: profile.id,
+        buyerName: profile.name,
+        buyerPhone: profile.phone,
+        description: ORDER_DESCRIPTION,
+        amount: ORDER_AMOUNT,
+        currency: ORDER_CURRENCY,
+      });
+      if (!orderRes.ok || !orderRes.order) {
+        setPayError(orderRes.error ?? "Couldn't create the order.");
+        setPaying(false);
+        return;
+      }
+      activeOrderId = orderRes.order.id;
+      setOrderId(activeOrderId);
     }
-    setOrderId(orderRes.order.id);
 
     if (isStripe) {
-      const checkoutRes = await createStripeCheckout(orderRes.order.id);
+      const checkoutRes = await createStripeCheckout(activeOrderId);
       setPaying(false);
       if (!checkoutRes.ok || !checkoutRes.url) {
         setPayError(checkoutRes.error ?? "Couldn't start checkout.");
@@ -189,7 +252,7 @@ export default function Chat() {
     const payRes = await payWithPaystack({
       email: profile.email ?? `${profile.id}@gistville-buyer.local`,
       amountKobo: ORDER_AMOUNT * 100,
-      metadata: { orderId: orderRes.order.id, vendorId: vendor.id, purpose: "order" },
+      metadata: { orderId: activeOrderId, vendorId: vendor.id, purpose: "order" },
     });
     if (!payRes.ok || !payRes.reference) {
       setPayError(payRes.error ?? "Payment was not completed.");
@@ -200,7 +263,7 @@ export default function Chat() {
     const verifyRes = await verifyPaystackPayment({
       reference: payRes.reference,
       purpose: "order",
-      orderId: orderRes.order.id,
+      orderId: activeOrderId,
     });
     setPaying(false);
     if (!verifyRes.ok) {
@@ -211,6 +274,8 @@ export default function Chat() {
   };
 
   if (!vendor) return <p className="text-sm text-stone text-center py-16">Loading...</p>;
+
+  const canChat = Boolean(profile && profile.role === "buyer" && orderId);
 
   return (
     <div className="flex flex-col min-h-screen bg-paper max-w-md mx-auto relative">
@@ -234,19 +299,39 @@ export default function Chat() {
       </div>
 
       <div className="flex-1 px-4 py-4 space-y-2.5">
-        {seedMessages.map((m, i) => (
-          <div key={i} className={`flex ${m.from === "buyer" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl ${
-                m.from === "buyer"
-                  ? "bg-indigo text-white rounded-br-sm"
-                  : "bg-white border border-stone-light text-ink rounded-bl-sm"
-              }`}
-            >
-              {m.text}
-            </div>
+        {!profile || profile.role !== "buyer" ? (
+          <div className="bg-white border border-dashed border-stone-light rounded-sm p-5 text-center">
+            <Lock size={18} className="text-stone mx-auto mb-1.5" />
+            <p className="text-xs text-stone">
+              <Link
+                to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
+                className="text-indigo font-semibold"
+              >
+                Log in
+              </Link>{" "}
+              to message {vendor.name.split(" ")[0]}.
+            </p>
           </div>
-        ))}
+        ) : messages.length === 0 ? (
+          <p className="text-xs text-stone text-center py-6">
+            Say hi — ask about turnaround time, pricing, or anything else before you pay.
+          </p>
+        ) : (
+          messages.map((m) => (
+            <div key={m.id} className={`flex ${m.sender === "buyer" ? "justify-end" : "justify-start"}`}>
+              <div
+                className={`max-w-[75%] text-sm px-3 py-2 rounded-2xl ${
+                  m.sender === "buyer"
+                    ? "bg-indigo text-white rounded-br-sm"
+                    : "bg-white border border-stone-light text-ink rounded-bl-sm"
+                }`}
+              >
+                {m.text}
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={scrollRef} />
 
         <div className="bg-white border border-stone-light rounded-sm p-3.5 mt-3">
           <p className="text-[10px] font-mono uppercase tracking-wide text-stone">Payment request</p>
@@ -326,10 +411,20 @@ export default function Chat() {
       </div>
 
       <div className="p-3 border-t border-stone-light bg-white flex items-center gap-2 shrink-0 sticky bottom-0">
-        <div className="flex-1 bg-paper border border-stone-light rounded-full px-4 py-2.5 text-sm text-stone">
-          Type a message...
-        </div>
-        <button className="w-9 h-9 rounded-full bg-indigo flex items-center justify-center shrink-0" aria-label="Send">
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          disabled={!canChat}
+          placeholder={canChat ? "Type a message..." : "Log in to message this vendor"}
+          className="flex-1 bg-paper border border-stone-light rounded-full px-4 py-2.5 text-sm text-ink placeholder:text-stone outline-none focus:border-indigo disabled:opacity-60"
+        />
+        <button
+          onClick={handleSend}
+          disabled={!canChat || !draft.trim() || sending}
+          className="w-9 h-9 rounded-full bg-indigo disabled:opacity-40 flex items-center justify-center shrink-0"
+          aria-label="Send"
+        >
           <Send size={14} className="text-white" />
         </button>
       </div>

@@ -8,6 +8,7 @@ import type {
   AdCampaign,
   Order,
   VendorSubscription,
+  Message,
 } from "../types";
 
 // ---------------------------------------------------------------------------
@@ -480,6 +481,73 @@ export async function createOrder(input: {
   return { ok: true, order: data as Order };
 }
 
+/**
+ * Chat needs an order to attach messages to (the `messages` table is
+ * order-scoped), but a buyer should be able to message a vendor before
+ * paying — "chat, agree, pay", not "pay, then chat". This reuses the most
+ * recent non-completed order between this buyer and vendor if one already
+ * exists, or creates a fresh unpaid one, WITHOUT firing the "new order"
+ * notification createOrder() does — opening a chat isn't a commitment yet,
+ * only a real order being created/paid for is.
+ */
+export async function ensureConversationOrder(input: {
+  vendorId: string;
+  buyerId: string;
+  buyerName: string;
+  buyerPhone?: string;
+  description: string;
+  amount: number;
+  currency?: string;
+}): Promise<{ ok: boolean; order?: Order; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) {
+    const existingMock = MOCK_ORDERS.find(
+      (o) => o.buyer_id === input.buyerId && o.vendor_id === input.vendorId && o.status !== "completed"
+    );
+    if (existingMock) return { ok: true, order: existingMock };
+    const order: Order = {
+      id: crypto.randomUUID(),
+      vendor_id: input.vendorId,
+      buyer_id: input.buyerId,
+      buyer_name: input.buyerName,
+      description: input.description,
+      amount: input.amount,
+      status: "pending",
+      paid: false,
+      created_at: new Date().toISOString(),
+    };
+    MOCK_ORDERS.unshift(order);
+    return { ok: true, order };
+  }
+
+  const { data: existing } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("buyer_id", input.buyerId)
+    .eq("vendor_id", input.vendorId)
+    .neq("status", "completed")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing) return { ok: true, order: existing as Order };
+
+  const { data, error } = await supabase
+    .from("orders")
+    .insert({
+      vendor_id: input.vendorId,
+      buyer_id: input.buyerId,
+      buyer_name: input.buyerName,
+      buyer_phone: input.buyerPhone ?? null,
+      description: input.description,
+      amount: input.amount,
+      currency: input.currency ?? "NGN",
+    })
+    .select()
+    .single();
+
+  if (error || !data) return { ok: false, error: error?.message };
+  return { ok: true, order: data as Order };
+}
+
 export async function fetchOrderById(orderId: string): Promise<Order | null> {
   if (!isSupabaseConfigured || !supabase) {
     return MOCK_ORDERS.find((o) => o.id === orderId) ?? null;
@@ -513,6 +581,65 @@ export async function fetchBuyerOrders(buyerId: string): Promise<Order[]> {
     .order("created_at", { ascending: false });
   if (error || !data) return [];
   return data as Order[];
+}
+
+// ---------------------------------------------------------------------------
+// Chat messages (per-order threads, real-time via Supabase Realtime)
+// ---------------------------------------------------------------------------
+const MOCK_MESSAGES: Message[] = [];
+
+export async function fetchMessages(orderId: string): Promise<Message[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    return MOCK_MESSAGES.filter((m) => m.order_id === orderId);
+  }
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: true });
+  if (error || !data) return [];
+  return data as Message[];
+}
+
+export async function sendMessage(
+  orderId: string,
+  sender: "buyer" | "vendor",
+  text: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) {
+    MOCK_MESSAGES.push({
+      id: crypto.randomUUID(),
+      order_id: orderId,
+      sender,
+      text,
+      created_at: new Date().toISOString(),
+    });
+    return { ok: true };
+  }
+  const { error } = await supabase.from("messages").insert({ order_id: orderId, sender, text });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Subscribes to new messages on one order's thread in real time. Returns
+ * an unsubscribe function — always call it on unmount/order change, since
+ * each call opens its own Supabase Realtime channel.
+ */
+export function subscribeToMessages(orderId: string, onInsert: (message: Message) => void): () => void {
+  if (!isSupabaseConfigured || !supabase) return () => {};
+  const client = supabase;
+  const channel = client
+    .channel(`messages:${orderId}`)
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "messages", filter: `order_id=eq.${orderId}` },
+      (payload) => onInsert(payload.new as Message)
+    )
+    .subscribe();
+  return () => {
+    client.removeChannel(channel);
+  };
 }
 
 // ---------------------------------------------------------------------------

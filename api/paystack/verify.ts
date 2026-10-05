@@ -51,8 +51,33 @@ export default async function handler(req: Request): Promise<Response> {
   const amountKobo: number = psData.data.amount;
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+  // Single-use guard: a payment reference can only ever be consumed once,
+  // for one purpose. Without this, Paystack confirming "success" on a
+  // reference doesn't stop that same reference being replayed against this
+  // endpoint again — which would let someone mark unlimited orders paid,
+  // re-extend their verified badge, or mint coins repeatedly from a single
+  // real payment. The insert's primary-key conflict IS the atomic check.
+  // If something downstream turns out to be a legitimate failure (order
+  // not found, amount mismatch, a DB error) rather than an actual replay,
+  // `fail()` releases the claim again so a genuine retry with the same
+  // reference still works.
+  const { error: replayErr } = await supabase
+    .from("paystack_transactions")
+    .insert({ reference, purpose });
+  if (replayErr) {
+    return new Response(
+      JSON.stringify({ ok: false, error: "This payment has already been processed." }),
+      { status: 409 }
+    );
+  }
+
+  const fail = async (status: number, message: string): Promise<Response> => {
+    await supabase.from("paystack_transactions").delete().eq("reference", reference);
+    return new Response(JSON.stringify({ ok: false, error: message }), { status });
+  };
+
   if (purpose === "order") {
-    if (!orderId) return new Response(JSON.stringify({ error: "Missing orderId" }), { status: 400 });
+    if (!orderId) return fail(400, "Missing orderId");
 
     const { data: order, error: fetchErr } = await supabase
       .from("orders")
@@ -60,36 +85,25 @@ export default async function handler(req: Request): Promise<Response> {
       .eq("id", orderId)
       .single();
 
-    if (fetchErr || !order) {
-      return new Response(JSON.stringify({ ok: false, error: "Order not found" }), { status: 404 });
-    }
+    if (fetchErr || !order) return fail(404, "Order not found");
+
     const expectedKobo = Math.round(Number(order.amount) * 100);
-    if (amountKobo !== expectedKobo) {
-      return new Response(
-        JSON.stringify({ ok: false, error: "Charged amount doesn't match order amount." }),
-        { status: 402 }
-      );
-    }
+    if (amountKobo !== expectedKobo) return fail(402, "Charged amount doesn't match order amount.");
 
     const { error: updateErr } = await supabase
       .from("orders")
       .update({ paid: true, paystack_reference: reference })
       .eq("id", orderId);
-    if (updateErr) {
-      return new Response(JSON.stringify({ ok: false, error: updateErr.message }), { status: 500 });
-    }
+    if (updateErr) return fail(500, updateErr.message);
+
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   }
 
   if (purpose === "verification") {
-    if (!vendorId) return new Response(JSON.stringify({ error: "Missing vendorId" }), { status: 400 });
+    if (!vendorId) return fail(400, "Missing vendorId");
 
     const expectedKobo = 1000 * 100;
-    if (amountKobo !== expectedKobo) {
-      return new Response(JSON.stringify({ ok: false, error: "Unexpected charge amount." }), {
-        status: 402,
-      });
-    }
+    if (amountKobo !== expectedKobo) return fail(402, "Unexpected charge amount.");
 
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + 1);
@@ -99,13 +113,13 @@ export default async function handler(req: Request): Promise<Response> {
       status: "active",
       current_period_end: periodEnd.toISOString(),
     });
-    if (subErr) return new Response(JSON.stringify({ ok: false, error: subErr.message }), { status: 500 });
+    if (subErr) return fail(500, subErr.message);
 
     const { error: profErr } = await supabase
       .from("profiles")
       .update({ verified: true, verified_until: periodEnd.toISOString() })
       .eq("id", vendorId);
-    if (profErr) return new Response(JSON.stringify({ ok: false, error: profErr.message }), { status: 500 });
+    if (profErr) return fail(500, profErr.message);
 
     return new Response(JSON.stringify({ ok: true, current_period_end: periodEnd.toISOString() }), {
       status: 200,
@@ -113,9 +127,7 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   if (purpose === "coins") {
-    if (!buyerId || !coins) {
-      return new Response(JSON.stringify({ error: "Missing buyerId or coins" }), { status: 400 });
-    }
+    if (!buyerId || !coins) return fail(400, "Missing buyerId or coins");
 
     const COIN_PACKAGES = [
       { coins: 100, priceNgn: 1000 },
@@ -123,14 +135,10 @@ export default async function handler(req: Request): Promise<Response> {
       { coins: 1200, priceNgn: 10000 },
     ];
     const pkg = COIN_PACKAGES.find((p) => p.coins === coins);
-    if (!pkg || amountKobo !== pkg.priceNgn * 100) {
-      return new Response(JSON.stringify({ ok: false, error: "Unrecognized coin package or amount." }), {
-        status: 402,
-      });
-    }
+    if (!pkg || amountKobo !== pkg.priceNgn * 100) return fail(402, "Unrecognized coin package or amount.");
 
     const { error: coinErr } = await supabase.rpc("add_coins", { profile_id: buyerId, amount: coins });
-    if (coinErr) return new Response(JSON.stringify({ ok: false, error: coinErr.message }), { status: 500 });
+    if (coinErr) return fail(500, coinErr.message);
 
     await supabase.from("coin_purchases").insert({
       buyer_id: buyerId,
@@ -144,5 +152,5 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ ok: true, newBalance: prof?.coin_balance }), { status: 200 });
   }
 
-  return new Response(JSON.stringify({ error: "Unknown purpose" }), { status: 400 });
+  return fail(400, "Unknown purpose");
 }

@@ -26,7 +26,7 @@ export interface Vendor {
 export interface Message {
   id: string;
   order_id: string;
-  from: "buyer" | "vendor";
+  sender: "buyer" | "vendor";
   text: string;
   created_at: string;
 }

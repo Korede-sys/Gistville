@@ -92,6 +92,38 @@ export default async function handler(req: Request): Promise<Response> {
       break;
     }
 
+    // Keeps a payout's real status in sync after the fact — in particular,
+    // a transfer that came back `otp` (stuck pending our own "one payout
+    // at a time" guard in api/paystack/payout.ts) needs to be finalized
+    // manually in the Paystack dashboard; without listening for these
+    // events, our `payouts.status` row would stay "pending" forever even
+    // after that manual finalization actually completes the transfer.
+    case "transfer.success": {
+      const transferCode: string | undefined = event.data?.transfer_code;
+      if (transferCode) {
+        await supabase
+          .from("payouts")
+          .update({ status: "success" })
+          .eq("paystack_transfer_code", transferCode);
+      }
+      break;
+    }
+
+    case "transfer.failed":
+    case "transfer.reversed": {
+      const transferCode: string | undefined = event.data?.transfer_code;
+      if (transferCode) {
+        await supabase
+          .from("payouts")
+          .update({
+            status: "failed",
+            failure_reason: event.data?.reason ?? event.event,
+          })
+          .eq("paystack_transfer_code", transferCode);
+      }
+      break;
+    }
+
     case "subscription.disable": {
       // Grace period: don't revoke the verified badge immediately. Only
       // mark the subscription inactive here — `profiles.verified` stays

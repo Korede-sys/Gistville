@@ -17,6 +17,7 @@ import VendorOrders from "./pages/vendor/VendorOrders";
 import VendorAds from "./pages/vendor/VendorAds";
 import VendorVerification from "./pages/vendor/VendorVerification";
 import VendorGifts from "./pages/vendor/VendorGifts";
+import VendorChat from "./pages/vendor/VendorChat";
 
 import BuyerLayout from "./pages/buyer/BuyerLayout";
 import BuyerFeed from "./pages/buyer/BuyerFeed";
@@ -52,6 +53,7 @@ export default function App() {
         <Route index element={<VendorOverview />} />
         <Route path="listings" element={<VendorListings />} />
         <Route path="orders" element={<VendorOrders />} />
+        <Route path="orders/:orderId/chat" element={<VendorChat />} />
         <Route path="ads" element={<VendorAds />} />
         <Route path="gifts" element={<VendorGifts />} />
         <Route path="verification" element={<VendorVerification />} />
