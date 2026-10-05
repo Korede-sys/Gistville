@@ -55,8 +55,9 @@ Vendors outside Paystack's 5 supported countries route to Stripe Connect instead
 
 1. Get keys from the Stripe dashboard -> Developers -> API keys.
 2. Add to Vercel env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
-3. Register a webhook at `https://<your-domain>/api/stripe/webhook` listening for `checkout.session.completed` and `account.updated`.
+3. Register a webhook at `https://<your-domain>/api/stripe/webhook` listening for `checkout.session.completed`, `account.updated`, `invoice.payment_succeeded`, `invoice.payment_failed`, and `customer.subscription.deleted` (the last three drive the vendor-verification subscription, not order payments).
 4. Vendor onboarding: `/vendor/gifts` shows "Connect with Stripe" for Stripe-routed vendors.
+5. Vendor verification: `/vendor/verification` shows "Subscribe with Stripe" for Stripe-routed vendors, priced per-currency via `VERIFICATION_FEE_STRIPE` in `src/lib/payments.ts`. Run `supabase/migrations/0004_stripe_verification.sql` first.
 
 **Gifting economy is Paystack/Naira-only.** A Stripe-routed vendor's profile won't show "Send a gift" at all - gifts are NGN-denominated end to end, no currency conversion built. Enforced in two places (UI hidden + a defense-in-depth check in the send handler).
 
@@ -119,11 +120,13 @@ Supabase grants `EXECUTE` on new functions to the `anon`/`authenticated` roles b
 
 ## Known gaps, not silently left
 - **Multiplayer game**: no stranger matchmaking, no spectating, no leaderboards, no server-authoritative referee.
-- **Stripe verification + gifting**: not built - Stripe vendors can sell and get paid for orders, nothing else monetization-wise yet.
+- **Gifting/coins economy**: Paystack/Naira-only — Stripe-routed vendors can sell and get paid for orders and subscribe to verification, but can't yet receive gifts or have buyers tip them in coins.
 - **Live streaming + video calls**: not started. Needs a WebRTC provider decision (Agora recommended for Africa network performance) before any code gets written.
 - **Vendor payout OTP finalization** (Paystack): if a transfer comes back with status `otp`, it's stuck until finalized manually in the Paystack dashboard.
 
 ### Fixed since the last pass
+- **Stripe-side vendor verification**: Stripe-routed vendors (Europe and anywhere else outside Paystack's supported countries) can now subscribe to the verified badge too — `api/stripe/verification-checkout.ts` creates a recurring Stripe Checkout subscription priced per-currency, and `api/stripe/webhook.ts` handles `checkout.session.completed`, `invoice.payment_succeeded` (renewals), `invoice.payment_failed`, and `customer.subscription.deleted` (same grace-period pattern as the Paystack side — see `src/lib/verification.ts`). Needs `supabase/migrations/0004_stripe_verification.sql` run, and the Stripe webhook endpoint subscribed to those four extra events in the Stripe dashboard.
+- **Wider country/currency coverage**: `src/lib/payments.ts` now lists most of Europe (Spain, Italy, Netherlands, Belgium, Portugal, Ireland, Austria, Finland, Greece as EUR; Poland/PLN, Sweden/SEK, Denmark/DKK, Switzerland/CHF, Norway/NOK) instead of just Germany/France — matters now that European vendor onboarding is in scope, not just US/UK/CA/AU.
 - **Paystack recurring billing grace period**: `subscription.disable` no longer revokes the verified badge immediately — see `src/lib/verification.ts`.
 - **Real admin auth**: per-admin login via `admin_users`, not a shared access code (which is now only a one-time bootstrap secret).
 - **WhatsApp/SMS notifications**: order created/status changed, dispute filed/resolved — see "Connecting Twilio" above. Requires your own Twilio account/credentials to actually send.

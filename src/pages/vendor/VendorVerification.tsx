@@ -3,6 +3,8 @@ import { ShieldCheck } from "lucide-react";
 import { useAuth } from "../../lib/auth";
 import { fetchSubscription, verifyPaystackPayment } from "../../lib/data";
 import { payWithPaystack } from "../../lib/paystack";
+import { startStripeVerification } from "../../lib/stripe";
+import { currencyForCountry, verificationFeeForCurrency, formatMoney } from "../../lib/payments";
 import type { VendorSubscription } from "../../types";
 
 const VERIFICATION_FEE_NGN = 1000;
@@ -22,6 +24,42 @@ export default function VendorVerification() {
   }, [profile]);
 
   const isStripeVendor = profile?.payment_provider === "stripe";
+  const stripeCurrency = currencyForCountry(profile?.country);
+  const stripeFee = verificationFeeForCurrency(stripeCurrency);
+
+  useEffect(() => {
+    // After returning from Stripe Checkout, the webhook may take a moment
+    // to land, so poll briefly rather than showing a stale "not verified"
+    // state right after a successful subscription.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("stripe_verification") !== "1" || !profile) return;
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
+      const updated = await fetchSubscription(profile.id);
+      if (updated?.status === "active") {
+        setSub(updated);
+        clearInterval(poll);
+      } else if (attempts >= 8) {
+        clearInterval(poll);
+      }
+    }, 2000);
+    return () => clearInterval(poll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
+
+  const subscribeStripe = async () => {
+    if (!profile) return;
+    setActivating(true);
+    setError(null);
+    const res = await startStripeVerification(stripeCurrency);
+    if (!res.ok || !res.url) {
+      setError(res.error ?? "Couldn't start checkout.");
+      setActivating(false);
+      return;
+    }
+    window.location.href = res.url;
+  };
 
   const subscribe = async () => {
     if (!profile) return;
@@ -78,13 +116,60 @@ export default function VendorVerification() {
     return (
       <div className="max-w-lg">
         <h1 className="text-2xl font-display font-semibold text-ink mb-1">Verification</h1>
-        <div className="bg-white border border-stone-light rounded-sm p-6 mt-4">
-          <p className="text-sm text-ink font-semibold mb-1.5">Not available on Stripe yet</p>
-          <p className="text-xs text-ink/60">
-            The verification badge currently only works for Paystack-routed vendors (Naira billing).
-            Stripe-side verification isn't built yet — see README.
-          </p>
-        </div>
+        <p className="text-sm text-stone mb-6">
+          Verified vendors get a badge, priority placement in search, and buyer trust that converts
+          to sales.
+        </p>
+
+        {loading ? (
+          <p className="text-sm text-stone">Loading...</p>
+        ) : isActive ? (
+          <div className="bg-green/10 border border-green/20 rounded-sm p-5 flex items-start gap-3">
+            <ShieldCheck size={22} className="text-green shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-ink">You're verified</p>
+              <p className="text-xs text-ink/60 mt-1">
+                Active until{" "}
+                {sub?.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : "—"}
+                . Renews automatically — no action needed.
+              </p>
+            </div>
+          </div>
+        ) : isPastDue ? (
+          <div className="bg-mustard/10 border border-mustard/20 rounded-sm p-5">
+            <p className="text-sm font-semibold text-ink">Payment failed</p>
+            <p className="text-xs text-ink/60 mt-1">
+              Your last renewal charge didn't go through. Stripe will retry automatically — update
+              your card on file if it keeps failing.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white border border-stone-light rounded-sm p-6">
+            <div className="flex items-baseline gap-1 mb-1">
+              <span className="text-3xl font-display font-semibold text-ink">
+                {formatMoney(stripeFee, stripeCurrency)}
+              </span>
+              <span className="text-sm text-stone">/month</span>
+            </div>
+            <ul className="text-sm text-ink/60 space-y-1.5 mt-4 mb-6">
+              <li>✓ Verified badge on your profile and listings</li>
+              <li>✓ Priority placement in your category</li>
+              <li>✓ Higher buyer trust and conversion</li>
+            </ul>
+            <button
+              onClick={subscribeStripe}
+              disabled={activating}
+              className="w-full bg-indigo disabled:opacity-60 text-white text-sm font-semibold py-3 rounded-sm"
+            >
+              {activating ? "Redirecting..." : "Subscribe with Stripe"}
+            </button>
+            {error && <p className="text-xs text-red-600 mt-2.5 text-center">{error}</p>}
+            <p className="text-[11px] text-stone mt-2.5 text-center">
+              Renews automatically each month via Stripe — manage or cancel any time from your
+              Stripe customer portal or by contacting support.
+            </p>
+          </div>
+        )}
       </div>
     );
   }

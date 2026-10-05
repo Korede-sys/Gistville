@@ -124,6 +124,8 @@ create table vendor_subscriptions (
   paystack_subscription_code text,
   paystack_customer_code text,
   paystack_email_token text,
+  stripe_subscription_id text,
+  stripe_customer_id text,
   currency text not null default 'NGN',
   created_at timestamptz not null default now()
 );

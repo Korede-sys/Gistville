@@ -24,6 +24,17 @@ export async function startStripeOnboarding(): Promise<{ ok: boolean; error?: st
   });
 }
 
+export async function startStripeVerification(
+  currency: string
+): Promise<{ ok: boolean; error?: string; url?: string }> {
+  const base = window.location.href.split("?")[0];
+  return authedFetch("/api/stripe/verification-checkout", {
+    currency,
+    successUrl: `${base}?stripe_verification=1`,
+    cancelUrl: base,
+  });
+}
+
 // This call itself doesn't check who's asking - it doesn't need to, since
 // it only operates on an orderId that must already exist. Buyer login is
 // actually enforced earlier, at order creation (createOrder() in
